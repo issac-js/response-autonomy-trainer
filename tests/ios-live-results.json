@@ -1,0 +1,22 @@
+{
+  "target": "https://response-autonomy-trainer.app.workbuddy.host/?sharecode=O6CO6UZJWZ",
+  "engine": "webkit device emulation (not real iOS)",
+  "tests": [
+    "live build exposes the v0.7 controls on an iPhone viewport",
+    "new controls meet the 44px target and do not overflow 390px",
+    "mechanism and self-check rows wrap inside the panel",
+    "cloud panel stays usable at 390px",
+    "larger iPhone keeps the same layout",
+    "no page errors and no unexpected external hosts"
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "device": {
+    "width": 390,
+    "height": 664
+  },
+  "device2": {
+    "width": 430,
+    "height": 740
+  }
+}
