@@ -1,0 +1,23 @@
+{
+  "tests": [
+    "unsaved real plan survives in-app navigation, tab switching and a full reload",
+    "changing the practice unit no longer wipes a half-written real plan",
+    "unsaved form text is never written to the persistent record or JSON backup",
+    "clear transient draft removes the buffer without rewriting visible fields",
+    "coach simulation own wording and urge survive a refresh; commit still works",
+    "unsaved single-card reply raises a beforeunload prompt and never leaks to another card",
+    "a crafted backup id cannot inject markup or execute script, and the observation still saves",
+    "failed UI import leaves no stale pre-import snapshot (fresh page)",
+    "successful UI import still keeps an exact pre-import snapshot",
+    "v0.3 backup UI round-trip: FSRS/due/history/writes preserved, coach empty",
+    "320/390/1440 layouts with the unsaved banner visible have no horizontal overflow",
+    "complete usage flow: card recall -> 3-round simulation -> real plan/observation -> review -> backup round-trip",
+    "beforeunload warning still works when sessionStorage is unavailable",
+    "no page script errors and no external HTTP requests across all regression checks"
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "dialogs": [
+    "beforeunload"
+  ]
+}

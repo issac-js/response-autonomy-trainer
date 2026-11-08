@@ -1,0 +1,29 @@
+{
+  "tests": [
+    "file URL loads self-contained app; new card opening changes no progress",
+    "recall is locked before strategy feedback, then saved with FSRS and reflection",
+    "daily completed-new count persists across restart and repeated sessions",
+    "other valid wording is stored as ungraded, not wrong",
+    "JSON download and UI import preserve FSRS logs and dialogue records",
+    "bad UI import refuses nested malformed data and keeps storage byte-identical",
+    "local corruption shows recovery page without resetting existing bytes",
+    "stale page cannot overwrite newer storage; pending content is exportable",
+    "all 24 representative three-turn dialogue paths run through actual controls",
+    "all 216 authored dialogue paths save complete histories without truncation",
+    "local recording creates playable audio and releases microphone on navigation",
+    "denied microphone permission falls back to text without losing draft",
+    "320, 390, 1440 layouts: all pages and single/dialogue phases have no horizontal overflow",
+    "offline package performs no external HTTP requests and no page script errors"
+  ],
+  "errors": [],
+  "requests": [],
+  "screenshots": [
+    "preview-320.png",
+    "preview-390.png",
+    "preview-1440.png"
+  ],
+  "skipped": [
+    "v0.2 baseline browser audit: RAT_BASELINE_PATH not available (D:\\迅雷下载\\project\\Response_Autonomy_Trainer_v0.2\\index.html); not executed and not counted as passed"
+  ],
+  "webkit": "passed: file URL, recall, FSRS save, dialogue branch"
+}

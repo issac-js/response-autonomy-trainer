@@ -1,0 +1,9 @@
+PASS storage identity unchanged: key, version 1, schema 3, no new persistent fields
+PASS v0.3 in-memory migration does not rewrite disk; due and old payloads intact
+PASS v0.3 -> explicit save -> JSON export -> re-import keeps every old payload byte-equal
+PASS restoreBackup keeps the exact pre-import snapshot on success
+PASS quota failure on the main write leaves no orphan pre-import snapshot
+PASS snapshot-only failure: import still succeeds, reports no snapshot and removes stale one
+PASS transient form buffer uses a separate key and never touches the persistent record
+PASS coach validation still accepts legacy-shaped records with arbitrary ids
+{"passed":8}

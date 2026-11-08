@@ -1,0 +1,12 @@
+{
+  "baselinePath": "D://迅雷下载//沟通决策训练系统//baseline-v0.4.0//index.html",
+  "checks": [
+    "v0.4.1 export contains FSRS, due, history, writes, dialogue and both coach record types",
+    "rollback to v0.4.0: every payload byte-equal after import",
+    "forward v0.4.0 -> v0.4.1 re-import: every payload byte-equal",
+    "failed import no longer destroys the earlier rollback snapshot (baseline: lost, v0.4.1: kept)",
+    "snapshot-only quota failure: baseline aborts a valid import, v0.4.1 imports and warns"
+  ],
+  "status": "passed",
+  "passed": 5
+}

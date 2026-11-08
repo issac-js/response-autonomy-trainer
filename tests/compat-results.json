@@ -1,0 +1,73 @@
+{
+  "engines": {
+    "bundled-chromium": {
+      "checks": {
+        "load": "pass",
+        "single-recall-and-FSRS": "pass",
+        "coach-simulation": "pass",
+        "real-plan-save": "pass",
+        "reload-persists-record": "pass",
+        "unsaved-form-guard": "pass",
+        "v0.3-backup-import": "pass",
+        "width-320": "pass",
+        "no-external-requests": "pass",
+        "no-page-errors": "pass"
+      },
+      "pageErrors": [],
+      "externalRequests": [],
+      "status": "passed"
+    },
+    "system-edge": {
+      "checks": {
+        "load": "pass",
+        "single-recall-and-FSRS": "pass",
+        "coach-simulation": "pass",
+        "real-plan-save": "pass",
+        "reload-persists-record": "pass",
+        "unsaved-form-guard": "pass",
+        "v0.3-backup-import": "pass",
+        "width-320": "pass",
+        "no-external-requests": "pass",
+        "no-page-errors": "pass"
+      },
+      "pageErrors": [],
+      "externalRequests": [],
+      "status": "passed"
+    },
+    "system-chrome": {
+      "checks": {
+        "load": "pass",
+        "single-recall-and-FSRS": "pass",
+        "coach-simulation": "pass",
+        "real-plan-save": "pass",
+        "reload-persists-record": "pass",
+        "unsaved-form-guard": "pass",
+        "v0.3-backup-import": "pass",
+        "width-320": "pass",
+        "no-external-requests": "pass",
+        "no-page-errors": "pass"
+      },
+      "pageErrors": [],
+      "externalRequests": [],
+      "status": "passed"
+    },
+    "bundled-webkit-windows": {
+      "checks": {
+        "load": "pass",
+        "single-recall-and-FSRS": "pass",
+        "coach-simulation": "pass",
+        "real-plan-save": "pass",
+        "reload-persists-record": "pass",
+        "unsaved-form-guard": "pass",
+        "v0.3-backup-import": "pass",
+        "width-320": "pass",
+        "no-external-requests": "pass",
+        "no-page-errors": "pass"
+      },
+      "pageErrors": [],
+      "externalRequests": [],
+      "status": "passed"
+    }
+  },
+  "note": "Windows WebKit via Playwright is not iOS Safari; real-device Safari, real microphone quality and manual UI inspection are not covered."
+}

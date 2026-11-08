@@ -1,0 +1,21 @@
+# Personalised training notes: kept local. The repository ships TRAINING_DESIGN.md.
+PERSONAL_TRAINING_SPEC_v0.4.md
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Node / Python
+node_modules/
+__pycache__/
+*.pyc
+
+# Test scratch files (created and deleted by the suites)
+tests/.*.json
+tests/.browsers/
+
+# Local browser-cache junctions used by the Playwright suites
+.browser-links/

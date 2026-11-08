@@ -1,0 +1,10 @@
+{
+  // Chinese Markdown: disable line-length, cli2-only compact-table spacing,
+  // and bare-URL rules. Baseline v0.4 docs are kept verbatim apart from spacing.
+  "globs": ["*.md"],
+  "config": {
+    "MD013": false,
+    "MD034": false,
+    "MD060": false
+  }
+}

@@ -1,0 +1,43 @@
+PASS new state is not saved merely by loading
+PASS v0.1 migration preserves due, history, writes; no invented FSRS
+PASS malformed local data stays untouched and blocks save
+PASS FSRS four grades produce valid future due times and round-trip
+PASS FSRS 100 repeated reviews keep serializable state and exact log count
+PASS invalid import 1 cannot change current storage
+PASS invalid import 2 cannot change current storage
+PASS invalid import 3 cannot change current storage
+PASS invalid import 4 cannot change current storage
+PASS invalid import 5 cannot change current storage
+PASS invalid import 6 cannot change current storage
+PASS invalid import 7 cannot change current storage
+PASS invalid import 8 cannot change current storage
+PASS invalid import 9 cannot change current storage
+PASS invalid import 10 cannot change current storage
+PASS invalid import 11 cannot change current storage
+PASS invalid import 12 cannot change current storage
+PASS invalid import 13 cannot change current storage
+PASS invalid import 14 cannot change current storage
+PASS replacement keeps exact before-import snapshot
+PASS quota failure rolls back memory and keeps recoverable pending content
+PASS import quota failure preserves active data and storage
+PASS stale tab cannot overwrite a newer record
+PASS banks retain exact v0.2 content and stable identities
+PASS all authored dialogue paths terminate in three turns, no missing nodes or cycles
+PASS v0.3 migration adds only empty coach state, retaining all old payloads
+PASS coach invalid import 1 leaves current bytes unchanged
+PASS coach invalid import 2 leaves current bytes unchanged
+PASS coach invalid import 3 leaves current bytes unchanged
+PASS coach invalid import 4 leaves current bytes unchanged
+PASS coach invalid import 5 leaves current bytes unchanged
+PASS coach invalid import 6 leaves current bytes unchanged
+PASS coach invalid import 7 leaves current bytes unchanged
+PASS coach invalid import 8 leaves current bytes unchanged
+PASS coach invalid import 9 leaves current bytes unchanged
+PASS coach invalid import 10 leaves current bytes unchanged
+PASS coach invalid import 11 leaves current bytes unchanged
+PASS coach invalid import 12 leaves current bytes unchanged
+PASS all 14 self-paced units have valid trigger and scenario, six authored scenarios end with normal duties
+PASS persisted simulation draft round-trips without creating a completed run or reality evidence
+PASS real plans and observations preserve original prediction even with discomfort increasing
+PASS old v0.3 refuses schema 3 writes rather than discarding personal practice
+{"passed":42,"dialoguePaths":216}

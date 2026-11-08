@@ -1,0 +1,21 @@
+{
+  "tests": [
+    "personal A B D defaults, 14 flexible units and 6 scenarios are accessible from home",
+    "profile can change without inventing extra psychological triggers",
+    "simulation requires prediction, hides actions before own reply, persists draft on navigation",
+    "deliberate pause is supported in idle chat; final duty round gives actual task facts",
+    "three-round review accepts increased discomfort and unknown self-checks without auto difficulty increase",
+    "all six scenarios and six opening action routes complete without generating real-world evidence",
+    "real plan saves prediction before any actual observation and survives refresh",
+    "negative/uncertain real outcomes are valid, retain prediction and count only known self-observations",
+    "schema 3 JSON UI round-trip retains old FSRS, coach runs and observed real history",
+    "malformed coach backup cannot overwrite prior state",
+    "saving a coach draft on storage failure retains exportable pending data and allows retry",
+    "untrusted journal text is displayed as text without script or image execution",
+    "320, 390, 1440 layouts fit coach home, draft, action choices and full review",
+    "targeted FSRS review obeys daily new-card allowance while still offering due cards",
+    "all personal training stays offline with zero page script errors"
+  ],
+  "errors": [],
+  "externalRequests": []
+}
