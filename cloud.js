@@ -14,7 +14,14 @@ function cloudMetaRead(){
  try{const raw=localStorage.getItem(CLOUD_META_KEY),o=raw?JSON.parse(raw):{};return o&&typeof o==='object'?{base:Number(o.base)||0,auto:o.auto!==false,enabled:!!o.enabled,lastSync:o.lastSync||'',email:typeof o.email==='string'?o.email:''}:{base:0,auto:true,enabled:false,lastSync:'',email:''}}catch(e){return {base:0,auto:true,enabled:false,lastSync:'',email:''}}
 }
 function cloudMetaWrite(){try{localStorage.setItem(CLOUD_META_KEY,JSON.stringify(cloudMeta))}catch(e){}}
-function cloudLabel(){return cloudSession&&cloudSession.user?(cloudSession.user.email||cloudSession.user.name||'已登录'):'未登录'}
+function cloudLabel(){
+ const u=cloudSession&&cloudSession.user;if(!u)return '';
+ const raw=u.email||u.name||u.phone||'';
+ if(!raw)return '';
+ const m=/^(.{1,2})(.*)@(.*)$/.exec(raw);
+ if(m)return m[1]+'***@'+m[3];
+ return raw.length>8?raw.slice(0,2)+'***':raw;
+}
 function cloudTime(iso){if(!iso)return '尚未同步';const d=new Date(iso);return Number.isNaN(d.getTime())?'尚未同步':d.toLocaleString('zh-CN',{hour12:false})}
 function cloudErr(e){const m=e&&e.message?e.message:String(e||'');if(/Failed to fetch|NetworkError|Load failed/i.test(m))return '网络不可用，稍后再试；本地记录不受影响。';return m||'操作未完成'}
 
@@ -128,7 +135,7 @@ function renderCloudPanel(){
   <p class="small muted">开启后可在手机与电脑间同步同一份记录。数据存放在本应用专属的云端空间，只有登录后的你能读写；不登录时应用仍完全离线可用。</p>
   ${cloudFlash?`<p class="notice small" role="status">${safe(cloudFlash)}</p>`:''}
   ${signed?`
-   <p><b>已登录：</b>${safe(cloudLabel())}</p>
+   <p><b>已登录</b>${cloudLabel()?' · '+safe(cloudLabel()):''}</p>
    <p class="small muted">上次同步：${safe(cloudTime(cloudMeta.lastSync))} · 本机版本 ${data.revision||0} · 云端基准 ${cloudMeta.base}</p>
    <label class="coach-trigger"><input type="checkbox" id="cloudAuto" ${cloudMeta.auto?'checked':''}> 保存后自动同步</label>
    <div class="actions"><button class="primary" id="cloudSyncNow">立即同步</button><button class="secondary" id="cloudPullNow">用云端覆盖本机</button><button class="ghost" id="cloudSignOut">退出登录</button></div>
