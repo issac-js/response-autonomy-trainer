@@ -2,6 +2,8 @@
 
 日期：2026-11-08（北京时间）。基线为附件 `Response_Autonomy_Trainer_v0.4.zip` 内的 v0.4.0。本版是**缺陷修复版**，不是功能重写，也不是为升版本号而改结构。
 
+> **阶段说明**：本文记录 v0.4.1 交付时的状态。独立复核随后发现草稿保护仍有 F1/F2/F3 三项缺陷与本文数字口径问题（F4），已在 **v0.4.2** 修复；本版不再作为当前交付物，保留作历史对照。当前状态见 `DELIVERY_v0.4.2.md`。
+
 ## 一、版本与文件确认
 
 - 附件解出 26 个文件，`SHA256SUMS.txt` 全部核对通过；工作区、桌面、文档、下载目录与 D 盘均未发现同名项目的更新版本，因此不存在需要保留的增量内容，未用附件覆盖任何既有工作。
@@ -38,7 +40,7 @@
 - 存储键 `response-autonomy-v01`、`version:1`、`schemaVersion:3`、全部字段名与取值规则**未变**，无需迁移；`defaultData()` 字段集合经回归检查逐项比对。
 - 先独立作答再看选项；允许多种合理表达与「其他」；不按字数、拒绝次数或焦虑下降判定成功；模拟成绩与真实交流证据分开。
 - 临时草稿只写 `sessionStorage`，不进入学习记录、不进入 JSON 备份、不上传、不接外部服务；关闭标签页即清除。
-- 单文件离线版本仍可用，与 LexiLoop 独立；未创建/推送/合并 GitHub 内容，未公开部署或发布生产。
+- 单文件离线版本仍可用，与 LexiLoop 独立；本阶段未创建/推送/合并 GitHub 内容，也未部署。后续的 L1 静态发布见第九节，属于同一日的下一阶段。
 - **没有**智能语义评分、自动转写、语速检测、AI 多轮推理；不宣称具备，也不宣称临床或现实迁移疗效。
 
 ## 五、实际测试结果
@@ -62,7 +64,7 @@
 
 `tests/preview-*.png` 与 `tests/coach-*.png` 是本次实际生成的合成数据界面截图，随交付保留作为视觉证据。
 
-对**解包后的交付物**另做独立验证：`sha256sum -c SHA256SUMS.txt` 45/45 OK；在解包目录运行 `python rebuild.py` 得到的 `index.html` 与交付 HTML 哈希一致；解包后的单文件 `index.html` 以 `file://` 打开可运行（版本号 0.4.1、未保存文本可恢复、0 页面错误、0 外部请求）。
+对**解包后的交付物**另做独立验证：`sha256sum -c SHA256SUMS.txt` 47/47 OK；在解包目录运行 `python rebuild.py` 得到的 `index.html` 与交付 HTML 哈希一致；解包后的单文件 `index.html` 以 `file://` 打开可运行（版本号 0.4.1、未保存文本可恢复、0 页面错误、0 外部请求）。
 
 ## 六、尚未通过的验收项与环境阻塞
 
@@ -102,12 +104,12 @@
 - 本文件：变更说明、实测结果、未通过项、迁移/回滚方法。
 - `README.md`：使用与边界说明；`AUDIT_AND_QA_v0.4.md` 保持基线原文，未改写历史结论或数字，仅为 markdownlint 合规补了 2 处列表前空行。
 - `TRAINING_DESIGN.md`：面向版本库的通用设计说明；本地个人化版本 `PERSONAL_TRAINING_SPEC_v0.4.md` 已由 `.gitignore` 排除，不进入仓库。
-- `.markdownlint-cli2.jsonc`：中文文档校验配置（关闭 MD013 / MD034 / MD060）。6 份 `.md` 已通过 `lint_md.py` 与 `markdownlint-cli2` 双校验，两者均 0 issue。
+- `.markdownlint-cli2.jsonc`：中文文档校验配置（关闭 MD013 / MD034 / MD060）。工作区 6 份 `.md`（含未入库的个人说明）全部通过 `lint_md.py` 与 `markdownlint-cli2` 双校验；交付包内 5 份，均 0 issue。
 
 ## 九、在线版本与仓库
 
 - 静态发布（L1）：`https://response-autonomy-trainer.app.workbuddy.host/?sharecode=O6CO6UZJWZ`。发布后在真实公网链接复测：HTTP 200、`isSecureContext=true`、`APP_VERSION=0.4.1`、`localStorage`/`sessionStorage` 可用、FSRS 刷新后保留、未保存文本可恢复、320px 无横向溢出、0 页面错误、0 外部请求。在线版数据仍只存在访问者各自浏览器，未接入云端存储。
-- 本地 Git 仓库：`Response_Autonomy_Trainer_v0.4/` 内已初始化 `main` 分支并完成初始提交；`PERSONAL_TRAINING_SPEC_v0.4.md` 由 `.gitignore` 排除，仓库内为通用版 `TRAINING_DESIGN.md`。CI 在全新克隆上等效验证通过：45/45 校验和、`core.cjs` 42/42、`rebuild.py` 重建与提交一致。
+- 本地 Git 仓库：`Response_Autonomy_Trainer_v0.4/` 内已初始化 `main` 分支并完成初始提交；`PERSONAL_TRAINING_SPEC_v0.4.md` 由 `.gitignore` 排除，仓库内为通用版 `TRAINING_DESIGN.md`。CI 在全新克隆上等效验证通过：47/47 校验和、`core.cjs` 42/42、`rebuild.py` 重建与提交一致。
 - 尚未创建远程仓库、未推送；具体命令见交付回复。
 
 ## 十、应用图标重设计

@@ -1,5 +1,5 @@
 // Persistence and migration are independent of UI and scheduler internals.
-const STORE='response-autonomy-v01', APP_VERSION='0.4.1';
+const STORE='response-autonomy-v01', APP_VERSION='0.4.2';
 const TODAY=()=>new Date().toLocaleDateString('sv-SE');
 const defaultData=()=>({version:1,schemaVersion:3,appVersion:APP_VERSION,revision:0,created:new Date().toISOString(),settings:{newPerDay:5,timer:false,showReason:true},cards:{},history:[],writes:{},dialogueHistory:[],coach:newCoach()});
 const record=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -60,8 +60,9 @@ function restoreBackup(obj){
  // Write the record first. A failed import must never leave a stale
  // "before-import" snapshot that looks like a valid rollback point.
  localStorage.setItem(STORE,raw);
- let snapshot=true;
- if(before!==null)try{localStorage.setItem(STORE+'-before-import',before)}catch(e){snapshot=false;try{localStorage.removeItem(STORE+'-before-import')}catch(_){}}
+ // Three distinct outcomes: a real snapshot, nothing to snapshot, or a failed snapshot.
+ let snapshot=before===null?'none':'saved';
+ if(before!==null)try{localStorage.setItem(STORE+'-before-import',before)}catch(e){snapshot='failed';try{localStorage.removeItem(STORE+'-before-import')}catch(_){}}
  data=next;persistedRaw=raw;storageFault='';pendingBackup=null;
  return snapshot;
 }

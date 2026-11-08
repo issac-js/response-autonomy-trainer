@@ -24,7 +24,7 @@ test('storage identity unchanged: key, version 1, schema 3, no new persistent fi
  const d=JSON.parse(e.run('JSON.stringify(defaultData())'));
  assert.equal(d.version,1);assert.equal(d.schemaVersion,3);
  assert.deepEqual(Object.keys(d).sort(),['appVersion','cards','coach','created','dialogueHistory','history','revision','schemaVersion','settings','version','writes']);
- assert.equal(e.run('APP_VERSION'),'0.4.1');
+ assert.equal(e.run('APP_VERSION'),'0.4.2');
 });
 test('v0.3 in-memory migration does not rewrite disk; due and old payloads intact',()=>{
  const raw=JSON.stringify(legacy),e=env(raw);
@@ -43,7 +43,7 @@ test('v0.3 -> explicit save -> JSON export -> re-import keeps every old payload 
  assert.deepEqual(exported.history,legacy.history);
  assert.deepEqual(exported.writes,legacy.writes);
  assert.deepEqual(exported.dialogueHistory,[]);
- assert.equal(e.run('restoreBackup(JSON.parse('+JSON.stringify(JSON.stringify(exported))+'))'),true);
+ assert.equal(e.run('restoreBackup(JSON.parse('+JSON.stringify(JSON.stringify(exported))+'))'),'saved');
  assert.deepEqual(JSON.parse(e.run('JSON.stringify(data.cards)')),legacy.cards);
  assert.deepEqual(JSON.parse(e.run('JSON.stringify(data.history)')),legacy.history);
  assert.deepEqual(JSON.parse(e.run('JSON.stringify(data.writes)')),legacy.writes);
@@ -51,8 +51,13 @@ test('v0.3 -> explicit save -> JSON export -> re-import keeps every old payload 
 });
 test('restoreBackup keeps the exact pre-import snapshot on success',()=>{
  const raw=JSON.stringify(legacy),e=env(raw);
- assert.equal(e.run('restoreBackup(defaultData())'),true);
+ assert.equal(e.run('restoreBackup(defaultData())'),'saved');
  assert.equal(e.values.get('response-autonomy-v01-before-import'),raw);
+});
+test('first import with no local record reports "none" instead of claiming a snapshot',()=>{
+ const e=env();
+ assert.equal(e.run('restoreBackup(defaultData())'),'none');
+ assert.equal(e.values.has('response-autonomy-v01-before-import'),false);
 });
 test('quota failure on the main write leaves no orphan pre-import snapshot',()=>{
  const raw=JSON.stringify(legacy),e=env(raw,'response-autonomy-v01');
@@ -63,7 +68,7 @@ test('quota failure on the main write leaves no orphan pre-import snapshot',()=>
 test('snapshot-only failure: import still succeeds, reports no snapshot and removes stale one',()=>{
  const raw=JSON.stringify(legacy),e=env(raw,'response-autonomy-v01-before-import');
  e.values.set('response-autonomy-v01-before-import','older-stale-snapshot');
- assert.equal(e.run('restoreBackup(defaultData())'),false);
+ assert.equal(e.run('restoreBackup(defaultData())'),'failed');
  assert.equal(e.values.get('response-autonomy-v01'),e.run('JSON.stringify(data)'));
  assert.equal(e.values.has('response-autonomy-v01-before-import'),false);
  assert.equal(e.run('data.schemaVersion'),3);
@@ -71,7 +76,7 @@ test('snapshot-only failure: import still succeeds, reports no snapshot and remo
 test('transient form buffer uses a separate key and never touches the persistent record',()=>{
  const guard=fs.readFileSync(path.join(root,'form-guard.js'),'utf8');
  const dataSrc=fs.readFileSync(path.join(root,'data.js'),'utf8');
- assert.match(guard,/const UNSAVED_KEY='response-autonomy-v01-unsaved-v1'/);
+ assert.match(guard,/const UNSAVED_KEY='response-autonomy-v01-unsaved-v2'/);
  assert.ok(!guard.includes('localStorage'));
  assert.ok(!dataSrc.includes('UNSAVED_KEY'));
  assert.ok(!dataSrc.includes('sessionStorage'));

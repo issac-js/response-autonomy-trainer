@@ -1,0 +1,17 @@
+{
+  "tests": [
+    "same card reopens with its draft; another card stays empty",
+    "saving the card clears only that card draft",
+    "same dialogue scenario reopens with its draft after reload",
+    "dialogue resumes at the same turn with earlier steps intact",
+    "finishing a dialogue clears its transient progress and draft",
+    "records whose ids are prefixes of one another keep their drafts apart",
+    "prefix isolation also holds when the longer id is saved first",
+    "first import into a blank browser reports no snapshot instead of claiming one",
+    "import over an existing record still keeps the exact snapshot",
+    "clearing transient drafts drops every group without touching the record",
+    "no page errors and no external requests"
+  ],
+  "errors": [],
+  "externalRequests": []
+}

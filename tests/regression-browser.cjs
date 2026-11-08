@@ -53,13 +53,13 @@ async function main(){
   const text=fs.readFileSync(tmp,'utf8');fs.unlinkSync(tmp);
   assert.equal(text.includes(MARK),false);
   assert.equal(text.includes('coachReal'),false);
-  assert.equal(await p.evaluate("sessionStorage.getItem('response-autonomy-v01-unsaved-v1')!==null"),true);
+  assert.equal(await p.evaluate("sessionStorage.getItem(UNSAVED_KEY)!==null"),true);
  });
 
  await test('clear transient draft removes the buffer without rewriting visible fields',async()=>{
   await p.click('[data-nav=coach]');await p.click('[data-coach-tab=real]');
   await p.click('#unsavedClear');
-  assert.equal(await p.evaluate("sessionStorage.getItem('response-autonomy-v01-unsaved-v1')"),null);
+  assert.equal(await p.evaluate("sessionStorage.getItem(UNSAVED_KEY)"),null);
   assert.equal(await p.locator('#realContext').inputValue(),MARK+'情境');
   await p.click('[data-nav=settings]');await p.click('#export'); // export must still work
  });

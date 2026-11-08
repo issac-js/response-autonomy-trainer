@@ -1,4 +1,4 @@
-// Verified migration/rollback path between the delivered v0.4.1 and the
+// Verified migration/rollback path between the delivered build and the
 // untouched v0.4.0 baseline. Requires RAT_BASELINE_HTML (defaults to a sibling
 // baseline-v0.4.0/index.html). A missing baseline is reported as blocked.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
@@ -47,12 +47,12 @@ async function main(){
  })()`;
  const tmpDir=path.join(root,'tests');const f1=path.join(tmpDir,'.rollback-v041.json'),f2=path.join(tmpDir,'.rollback-v040.json');
  try{
-  // 1. v0.4.1 produces a full backup.
+  // 1. the current build produces a full backup.
   const A=await page(fixedUrl);
   const expected=JSON.parse(await A.p.evaluate(rich));
   const v041=await exportJSON(A.p,f1);
-  for(const k of PAYLOAD_KEYS)assert.deepEqual(v041[k],expected[k],'v0.4.1 export '+k);
-  out.checks.push('v0.4.1 export contains FSRS, due, history, writes, dialogue and both coach record types');
+  for(const k of PAYLOAD_KEYS)assert.deepEqual(v041[k],expected[k],'current export '+k);
+  out.checks.push('current build export contains FSRS, due, history, writes, dialogue and both coach record types');
   await A.ctx.close();
 
   // 2. Rollback: the untouched v0.4.0 app imports it without losing anything.
@@ -66,15 +66,15 @@ async function main(){
   const v040=await exportJSON(B.p,f2);
   await B.ctx.close();
 
-  // 3. Forward again: v0.4.1 re-imports the v0.4.0 export.
+  // 3. Forward again: the current build re-imports the v0.4.0 export.
   const C=await page(fixedUrl);
   const s2=await importJSON(C.p,v040,f2);
   assert.match(s2,/已恢复/);
   const back=JSON.parse(await C.p.evaluate(`JSON.stringify(Object.fromEntries(${JSON.stringify(PAYLOAD_KEYS)}.map(k=>[k,data[k]])))`));
-  for(const k of PAYLOAD_KEYS)assert.deepEqual(back[k],expected[k],'v0.4.1 re-import '+k);
+  for(const k of PAYLOAD_KEYS)assert.deepEqual(back[k],expected[k],'current re-import '+k);
   assert.equal(await C.p.evaluate('data.version'),1);
   assert.equal(await C.p.evaluate('data.schemaVersion'),3);
-  out.checks.push('forward v0.4.0 -> v0.4.1 re-import: every payload byte-equal');
+  out.checks.push('forward v0.4.0 -> current build re-import: every payload byte-equal');
   await C.ctx.close();
 
   // 4. A/B evidence for the import-snapshot fix, using the untouched baseline.
@@ -98,7 +98,7 @@ async function main(){
   assert.equal(before.preservedAfterSuccess,true);
   assert.equal(before.preservedAfterFailure,false);
   assert.equal(after.preservedAfterFailure,true);
-  out.checks.push('failed import no longer destroys the earlier rollback snapshot (baseline: lost, v0.4.1: kept)');
+  out.checks.push('failed import no longer destroys the earlier rollback snapshot (baseline: lost, current: kept)');
   // 5. A/B: a snapshot-only quota failure no longer aborts an otherwise valid import.
   async function snapshotOnlyProbe(url){
    const S=await page(url);
@@ -113,7 +113,7 @@ async function main(){
   const bOnly=await snapshotOnlyProbe(baselineUrl),fOnly=await snapshotOnlyProbe(fixedUrl);
   assert.match(bOnly.status,/导入失败/);assert.equal(bOnly.value,3);
   assert.match(fOnly.status,/已恢复/);assert.equal(fOnly.value,5);
-  out.checks.push('snapshot-only quota failure: baseline aborts a valid import, v0.4.1 imports and warns');
+  out.checks.push('snapshot-only quota failure: baseline aborts a valid import, current build imports and warns');
 
   assert.deepEqual(out.pageErrors||[],[]);
   out.status='passed';

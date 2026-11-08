@@ -25,8 +25,8 @@ async function main(){
  const p=await fresh();
 
  await test('http origin serves the self-contained app with both storages available',async()=>{
-  assert.match(await p.title(),/v0\.4\.1/);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.4.1');
+  assert.match(await p.title(),/v0\.4\.2/);
+  assert.equal(await p.evaluate('APP_VERSION'),'0.4.2');
   assert.equal(await p.evaluate("(()=>{try{localStorage.setItem('__probe','1');sessionStorage.setItem('__probe','1');localStorage.removeItem('__probe');sessionStorage.removeItem('__probe');return true}catch(e){return false}})()"),true);
   assert.equal(await p.evaluate('typeof crypto.randomUUID'),'function');
  });
@@ -70,7 +70,7 @@ async function main(){
   assert.equal(await p.evaluate('data.coach.experiments.length'),1);
   assert.equal(await p.locator('#unsavedNotice').isVisible(),true);
   await p.click('#unsavedClear');
-  assert.equal(await p.evaluate("sessionStorage.getItem('response-autonomy-v01-unsaved-v1')"),null);
+  assert.equal(await p.evaluate("sessionStorage.getItem(UNSAVED_KEY)"),null);
  });
 
  await test('export and import round-trip under http',async()=>{
