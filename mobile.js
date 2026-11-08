@@ -69,10 +69,10 @@ function firstTap(el,action){
  el.addEventListener('pointerdown',event=>{tracking=true;startX=event.clientX;startY=event.clientY});
  el.addEventListener('pointerup',event=>{
   if(!tracking)return;tracking=false;
-  // Only the keyboard-open case races: the delayed click can land after the
-  // action bar has returned to position:fixed. Without the keyboard the normal
-  // click path stays exactly as before.
-  if(!document.body.classList.contains('keyboard-open'))return;
+  // Do not gate on .keyboard-open: on iOS the class is set from
+  // matchMedia('(pointer: coarse)') on focus, which is not guaranteed in the
+  // Simulator. Committing on pointerup is safe regardless, because the 10px
+  // movement filter drops scrolls and the 600ms guard drops the later click.
   if(Math.hypot(event.clientX-startX,event.clientY-startY)>10)return;
   run();
  });
