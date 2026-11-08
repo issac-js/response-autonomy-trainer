@@ -6,12 +6,12 @@ const CLOUD_CFG={
  publishableKey:'wbpk_35wMLSRqdNoN6GR7pEvjpB_X2HDOb1uuFSSMU2O0KV1wRqqtzTHtbB6'
 };
 const CLOUD_META_KEY='response-autonomy-v01-cloud';
-const CLOUD_SDK_URL='https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js';
+const CLOUD_SDK_URL=location.protocol==='file:'?'https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@0.1.4-dev.ca27990.202610161713/lib/index.global.js':'vendor/workbuddy-cloud-sdk.js';
 let cloudClient=null,cloudLoading=null,cloudSession=null,cloudMeta=cloudMetaRead(),cloudSyncTimer=null,cloudBusy=false,cloudFlash='';
 let cloudOtp=null;
 
 function cloudMetaRead(){
- try{const raw=localStorage.getItem(CLOUD_META_KEY),o=raw?JSON.parse(raw):{};return o&&typeof o==='object'?{base:Number(o.base)||0,auto:o.auto!==false,enabled:!!o.enabled,lastSync:o.lastSync||'',email:typeof o.email==='string'?o.email:''}:{base:0,auto:true,enabled:false,lastSync:'',email:''}}catch(e){return {base:0,auto:true,enabled:false,lastSync:'',email:''}}
+ try{const raw=localStorage.getItem(CLOUD_META_KEY),o=raw?JSON.parse(raw):{};return o&&typeof o==='object'?{base:Number(o.base)||0,baseHash:typeof o.baseHash==='string'?o.baseHash:'',owner:typeof o.owner==='string'?o.owner:'',auto:o.auto!==false,enabled:!!o.enabled,lastSync:o.lastSync||'',email:typeof o.email==='string'?o.email:''}:{base:0,auto:true,enabled:false,lastSync:'',email:''}}catch(e){return {base:0,auto:true,enabled:false,lastSync:'',email:''}}
 }
 function cloudMetaWrite(){try{localStorage.setItem(CLOUD_META_KEY,JSON.stringify(cloudMeta))}catch(e){}}
 function cloudLabel(){
@@ -32,7 +32,7 @@ function loadCloudSdk(){
   if(typeof WorkBuddyCloud!=='undefined')return resolve(initCloud());
   const s=document.createElement('script');
   s.src=CLOUD_SDK_URL;s.async=true;
-  s.onload=()=>{try{resolve(initCloud())}catch(e){reject(e)}};
+  s.onload=()=>{try{resolve(initCloud())}catch(e){cloudLoading=null;s.remove();reject(e)}};
   s.onerror=()=>{cloudLoading=null;reject(Error('云端组件加载失败，请检查网络后重试'))};
   document.head.appendChild(s);
  });
@@ -61,61 +61,91 @@ async function cloudPull(){
  const c=await loadCloudSdk();
  const {data,error}=await c.database.from('rat_state').select('payload,revision,updated_at').maybeSingle();
  if(error)throw error;
+ if(data&&(!Number.isSafeInteger(data.revision)||data.revision<0||data.payload?.revision!==data.revision))throw Error('云端版本与内容不匹配，未替换记录。');
+ if(data)validateData(data.payload);
  return data||null;
 }
-async function cloudPush(force=false){
- const c=await loadCloudSdk();
- const localRev=data.revision||0;
- const remote=await cloudPull();
- if(!remote){
-  if(cloudMeta.base!==0&&!force)throw Error('云端记录已不存在，请选择“用本机覆盖云端”。');
-  const {error}=await c.database.from('rat_state').insert({payload:data,revision:localRev,client:'web'});
-  if(error)throw error;
-  cloudMeta.base=localRev;cloudMeta.lastSync=new Date().toISOString();cloudMeta.enabled=true;cloudMetaWrite();
-  return {status:'uploaded',revision:localRev};
- }
- if(!force&&remote.revision!==cloudMeta.base){
-  return {status:'conflict',local:localRev,remote:remote.revision,remotePayload:remote.payload};
- }
- if(remote.revision===localRev){cloudMeta.base=localRev;cloudMeta.lastSync=new Date().toISOString();cloudMetaWrite();return {status:'same',revision:localRev}}
- const {data:rows,error}=await c.database.from('rat_state')
-  .update({payload:data,revision:localRev,client:'web',updated_at:new Date().toISOString()})
-  .eq('revision',remote.revision).select('revision');
- if(error)throw error;
- if(!Array.isArray(rows)||!rows.length)return {status:'conflict',local:localRev,remote:remote.revision,remotePayload:remote.payload};
- cloudMeta.base=localRev;cloudMeta.lastSync=new Date().toISOString();cloudMeta.enabled=true;cloudMetaWrite();
- return {status:'uploaded',revision:localRev};
+// Content identity, not a device-local counter, determines whether snapshots agree.
+function cloudCanonical(value){
+ if(Array.isArray(value))return value.map(cloudCanonical);
+ if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().map(k=>[k,cloudCanonical(value[k])]));
+ return value;
 }
-async function cloudAdopt(remote){
- const payload=remote&&remote.payload;
- if(!payload)throw Error('云端记录为空');
- const rev=Number(remote.revision)||0;
- adoptRemote(payload,rev);           // validates before replacing anything
- cloudMeta.base=rev;cloudMeta.lastSync=new Date().toISOString();cloudMeta.enabled=true;cloudMetaWrite();
+function cloudSnapshot(value=data){return JSON.stringify(cloudCanonical(validateData(value)))}
+async function cloudHash(value){
+ const bytes=new TextEncoder().encode(cloudSnapshot(value));
+ const hash=await crypto.subtle.digest('SHA-256',bytes);
+ return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
+}
+function cloudUnchanged(snapshot,raw){return cloudSnapshot()===snapshot&&localStorage.getItem(STORE)===raw}
+function cloudPracticeActive(){return unsavedDirty()||page==='play'||!!dialogueState||!!data.coach.draft}
+async function cloudBase(payload,owner){
+ cloudMeta.base=payload.revision||0;cloudMeta.baseHash=await cloudHash(payload);cloudMeta.owner=owner;
+ cloudMeta.lastSync=new Date().toISOString();cloudMeta.enabled=true;cloudMetaWrite();
+}
+function cloudConflict(){cloudFlash='云端与本机内容不同，请先导出备份，再选择保留哪一份。';return {status:'conflict'}}
+async function cloudPush(force=false,knownRemote){
+ const owner=cloudSession?.user?.id;
+ if(!owner)throw Error('请先登录。');
+ if(cloudMeta.owner&&cloudMeta.owner!==owner&&!force)return cloudConflict();
+ const snapshot=cloudSnapshot(),raw=localStorage.getItem(STORE),local=JSON.parse(snapshot);
+ const c=await loadCloudSdk(),remote=knownRemote===undefined?await cloudPull():knownRemote;
+ if(!force&&remote&&(!cloudMeta.baseHash||await cloudHash(remote.payload)!==cloudMeta.baseHash))return cloudConflict();
+ if(!force&&!remote&&cloudMeta.baseHash)return cloudConflict();
+ if(!cloudUnchanged(snapshot,raw)||cloudSession?.user?.id!==owner)throw Error('记录在同步期间有变化，请重新同步。');
+ const revision=Math.max(local.revision||0,remote?.revision||0)+1;
+ const next={...local,revision};
+ if(remote){
+  if(!remote.updated_at)throw Error('云端缺少并发版本信息，未覆盖任何记录。');
+  const {data:rows,error}=await c.database.from('rat_state')
+   .update({payload:next,revision,client:'web',updated_at:new Date().toISOString()})
+   .eq('revision',remote.revision).eq('updated_at',remote.updated_at).select('revision');
+  if(error)throw error;
+  if(!Array.isArray(rows)||!rows.length)return cloudConflict();
+ }else{
+  const {error}=await c.database.from('rat_state').insert({payload:next,revision,client:'web'});
+  if(error)throw error;
+ }
+ if(cloudSession?.user?.id!==owner)return {status:'deferred'};
+ // A slow acknowledgement must not overwrite edits made while uploading.
+ const unchanged=cloudUnchanged(snapshot,raw);
+ if(unchanged){const acknowledged=validateData(next),encoded=JSON.stringify(acknowledged);localStorage.setItem(STORE,encoded);data=acknowledged;persistedRaw=encoded;}
+ await cloudBase(next,owner);
+ if(!unchanged)cloudScheduleSync();
+ return {status:'uploaded',revision};
+}
+async function cloudAdopt(remote,snapshot=cloudSnapshot(),raw=localStorage.getItem(STORE)){
+ const owner=cloudSession?.user?.id;
+ if(!remote?.payload||!owner)throw Error('请先登录并确认云端记录。');
+ if(!cloudUnchanged(snapshot,raw))throw Error('本机记录已变化，未采用云端记录，请重新同步。');
+ adoptRemote(remote.payload,remote.revision);
+ await cloudBase(data,owner);
  render();
 }
 async function cloudSync(manual=false){
  if(cloudBusy)return;
  cloudBusy=true;
  try{
-  const session=await cloudEnsureSession();
-  if(!session){if(manual)cloudFlash='请先登录再同步。';renderCloudPanel();return}
+  const snapshot=cloudSnapshot(),raw=localStorage.getItem(STORE);
+  const session=await cloudEnsureSession(),owner=session?.user?.id;
+  if(!owner){if(manual)cloudFlash='请先登录再同步。';return}
+  if(cloudMeta.owner&&cloudMeta.owner!==owner){cloudConflict();return}
   const remote=await cloudPull();
-  const localRev=data.revision||0;
+  if(!cloudUnchanged(snapshot,raw))throw Error('本机记录在同步期间有变化，请重新同步。');
   if(!remote){
-   const r=await cloudPush();
-   cloudFlash=r.status==='uploaded'?'已把本机记录上传到云端。':'同步完成。';
-  }else if(remote.revision===localRev){
-   cloudMeta.base=localRev;cloudMeta.lastSync=new Date().toISOString();cloudMetaWrite();
-   cloudFlash='本机与云端一致，无需上传。';
-  }else if(remote.revision===cloudMeta.base){
-   const r=await cloudPush();
-   cloudFlash=r.status==='uploaded'?'已上传本机的新记录。':'同步完成。';
-  }else if(localRev===cloudMeta.base){
-   await cloudAdopt(remote);
-   cloudFlash='已用云端较新的记录更新本机。';
+   const r=await cloudPush(false,null);
+   if(r.status==='uploaded')cloudFlash='已把本机记录上传到云端。';
   }else{
-   cloudFlash='云端与本机都有新记录，请选择保留哪一份。';
+   const remoteHash=await cloudHash(remote.payload),localHash=await cloudHash(data);
+   if(!cloudUnchanged(snapshot,raw)||cloudSession?.user?.id!==owner)throw Error('同步期间记录或账号有变化，请重新同步。');
+   if(remoteHash===localHash){
+    await cloudBase(data,owner);cloudFlash='本机与云端内容一致。';
+   }else if(cloudMeta.baseHash&&remoteHash===cloudMeta.baseHash){
+    const r=await cloudPush(false,remote);if(r.status==='uploaded')cloudFlash='已上传本机的新记录。';
+   }else if((cloudMeta.baseHash&&localHash===cloudMeta.baseHash)||raw===null){
+    if(cloudPracticeActive()){cloudFlash='云端有更新；为保留当前练习，请完成或退出练习后再同步。';return}
+    await cloudAdopt(remote,snapshot,raw);cloudFlash='已采用云端较新的记录。';
+   }else cloudConflict();
   }
  }catch(e){cloudFlash='同步未完成：'+cloudErr(e)}
  finally{cloudBusy=false;renderCloudPanel()}
@@ -138,7 +168,7 @@ function renderCloudPanel(){
    <p><b>已登录</b>${cloudLabel()?' · '+safe(cloudLabel()):''}</p>
    <p class="small muted">上次同步：${safe(cloudTime(cloudMeta.lastSync))} · 本机版本 ${data.revision||0} · 云端基准 ${cloudMeta.base}</p>
    <label class="coach-trigger"><input type="checkbox" id="cloudAuto" ${cloudMeta.auto?'checked':''}> 保存后自动同步</label>
-   <div class="actions"><button class="primary" id="cloudSyncNow">立即同步</button><button class="secondary" id="cloudPullNow">用云端覆盖本机</button><button class="ghost" id="cloudSignOut">退出登录</button></div>
+   <div class="actions"><button class="primary" id="cloudSyncNow">立即同步</button><button class="secondary" id="cloudPullNow">用云端覆盖本机</button><button class="secondary" id="cloudPushNow">用本机覆盖云端</button><button class="ghost" id="cloudSignOut">退出登录</button></div>
    <div class="actions"><button class="ghost danger" id="cloudDelete">删除云端记录</button></div>
    <p class="small muted">“用云端覆盖本机”会替换本机记录，执行前请先导出备份。“删除云端记录”只删云端，本机保留。</p>
   `:`
@@ -160,6 +190,7 @@ function renderCloudPanel(){
   document.getElementById('cloudAuto').onchange=e=>{cloudMeta.auto=e.target.checked;cloudMetaWrite()};
   document.getElementById('cloudSyncNow').onclick=()=>cloudSync(true);
   document.getElementById('cloudPullNow').onclick=cloudPullNow;
+  document.getElementById('cloudPushNow').onclick=cloudPushNow;
   document.getElementById('cloudSignOut').onclick=cloudSignOut;
   document.getElementById('cloudDelete').onclick=cloudDelete;
  }
@@ -200,19 +231,30 @@ async function cloudVerifyCode(){
  finally{btn.disabled=false}
 }
 async function cloudPullNow(){
+ if(cloudBusy)return;
  if(!confirm('用云端记录覆盖本机？本机未同步的改动会丢失，建议先导出备份。'))return;
- cloudBusy=true;
+ cloudBusy=true;const snapshot=cloudSnapshot(),raw=localStorage.getItem(STORE);
  try{
   const session=await cloudEnsureSession();
   if(!session){cloudFlash='请先登录。';return}
   const remote=await cloudPull();
   if(!remote){cloudFlash='云端还没有记录，可先点“立即同步”上传本机。';return}
-  await cloudAdopt(remote);
+  await cloudAdopt(remote,snapshot,raw);
   cloudFlash='已用云端记录覆盖本机。';
  }catch(e){cloudFlash='恢复未完成：'+cloudErr(e)}
  finally{cloudBusy=false;renderCloudPanel()}
 }
+async function cloudPushNow(){
+ if(cloudBusy||!confirm('用本机完整记录覆盖云端？其他设备尚未同步的记录可能丢失，请先保留两端备份。'))return;
+ cloudBusy=true;
+ try{
+  if(!await cloudEnsureSession())throw Error('请先登录。');
+  const r=await cloudPush(true);if(r.status==='uploaded')cloudFlash='已用本机记录更新云端。';
+ }catch(e){cloudFlash='上传未完成：'+cloudErr(e)}
+ finally{cloudBusy=false;renderCloudPanel()}
+}
 async function cloudDelete(){
+ if(cloudBusy)return;
  if(!confirm('删除云端记录？本机记录会保留，但其他设备将无法再从云端恢复。'))return;
  if(!confirm('确认删除？此操作不可撤销。'))return;
  cloudBusy=true;
@@ -220,15 +262,17 @@ async function cloudDelete(){
   const c=await loadCloudSdk();
   const remote=await cloudPull();
   if(!remote){cloudFlash='云端没有可删除的记录。';return}
-  const {data:rows,error}=await c.database.from('rat_state').delete().eq('revision',remote.revision).select('revision');
+  if(!remote.updated_at)throw Error('云端缺少并发版本信息，未删除记录。');
+  const {data:rows,error}=await c.database.from('rat_state').delete().eq('revision',remote.revision).eq('updated_at',remote.updated_at).select('revision');
   if(error)throw error;
   if(!Array.isArray(rows)||!rows.length)throw Error('删除未生效，请重试');
-  cloudMeta.base=0;cloudMeta.lastSync='';cloudMeta.enabled=false;cloudMetaWrite();
+  cloudMeta.base=0;cloudMeta.baseHash='';cloudMeta.lastSync='';cloudMeta.enabled=false;cloudMetaWrite();
   cloudFlash='云端记录已删除；本机记录仍在。';
  }catch(e){cloudFlash='删除未完成：'+cloudErr(e)}
  finally{cloudBusy=false;renderCloudPanel()}
 }
 async function cloudSignOut(){
+ if(cloudBusy){cloudFlash='请等待同步完成后再退出登录。';renderCloudPanel();return}
  try{const c=await loadCloudSdk();await c.auth.signOut()}catch(e){}
  cloudSession=null;cloudMeta.enabled=false;cloudMetaWrite();
  cloudFlash='已退出登录；本机记录保持不变。';
@@ -365,6 +409,7 @@ async function aiGenerateCase(level){
  const got=await collectWithFallback(c,models,[{role:'system',content:GEN_SYSTEM},{role:'user',content:'难度：'+level+'。请出题。'}],0.8);
  const o=validateGenerated(parseJsonBlock(got.text));
  if(!o)throw Error('生成的题目不完整，请再试一次。');
- genSeq=(genSeq%99)+1;
- return {id:'RA-9'+String(genSeq).padStart(2,'0'),group:'随机挑战',signal:mechanismByKey(o.mechanism).label,generated:true,level,...o};
+ const used=new Set([...CARDS.map(c=>c.id),...Object.keys(data.cards),...data.history.map(h=>h.id)]);
+ const id=generatedReserve(used);
+ return {id,group:'随机挑战',signal:mechanismByKey(o.mechanism).label,generated:true,level,...o};
 }

@@ -17,7 +17,7 @@ function coachChecks(prefix){return Object.fromEntries(Object.keys(COACH_CHECKS)
 function coachId(){try{const id=window.crypto?.randomUUID?.();if(id)return id}catch(e){}return Date.now()+'-'+Math.random().toString(36).slice(2)}
 function coachPrompt(d,turn=d.turn){const s=PRACTICES[d.scenario];return turn===0?s.prompt:turn===1?(s.branches[d.steps[0]?.action]||s.branches.other):s.work}
 function coachFacts(d,turn=d.turn){const s=PRACTICES[d.scenario];return turn===0?s.facts:turn===1?s.second:s.required}
-function coachOpen(){stopVoice();clearTimer();page='coach';render()}
+function coachOpen(){requestEpoch++;challengeLevel=null;stopVoice();clearTimer();page='coach';render()}
 function coachReviewCards(){
  today=TODAY();const targetIds=new Set(['RA-003','RA-010',...data.coach.triggers.flatMap(t=>COACH_CARD_IDS[t])]);
  const due=dueList().filter(c=>targetIds.has(c.id)).map(c=>c.id).slice(0,3),allowance=Math.max(0,data.settings.newPerDay-startedToday());
@@ -88,7 +88,7 @@ function renderCoachDraft(){
 }
 function renderCoachReview(){
  const d=data.coach.draft,s=PRACTICES[d.scenario];
- root.innerHTML=`<section class="panel"><span class="pill">三轮已完成 · 还未保存复盘</span><h2>看判断过程，不给人格打分</h2><p><b>开始前预测：</b>${safe(d.prediction)}</p><p class="small muted">以下对方反应由脚本编写，不能证明真实同事会如何反应。你的原话没有被自动语义评分。</p>${d.steps.map((x,i)=>`<details><summary>第${i+1}轮 · ${safe(COACH_ACTIONS[x.action])}</summary><p><b>对方：</b>${safe(coachPrompt(d,i))}</p><p><b>我的原话：</b>${safe(x.own)}</p><p><b>想追加的内容：</b>${safe(x.urge||'未记录')}</p></details>`).join('')}<h3>本场景的复盘依据</h3><ul>${s.points.map(p=>`<li>${safe(p)}</li>`).join('')}<li>最后一轮需要正常履职：说明必要事实或可实现的承诺。简短确认可以自然，重要时间最好明确。</li><li>是否过度解释，要看信息的作用和自己的意图，不能只数句子、道歉或表情。</li></ul>${coachCheckInputs('sim','coachReview')}${coachScoreInput('coachAfter','此刻不适程度',null,'coachReview','','coachAfter')}<label for="coachLearning">一个做得好的点 / 下次只改一个点（可选）</label><textarea id="coachLearning"${unsavedAttrs('coachReview','','','coachLearning')} maxlength="1200"></textarea><p class="small muted">不适没有下降也可保存。模拟与真实记录分开；不会因为分数高或不适下降而自动升难度。</p><button id="coachFinish" class="primary">保存这次复盘</button></section>`;
+ root.innerHTML=`<section class="panel"><span class="pill">三轮已完成 · 还未保存复盘</span><h2>看判断过程，不给人格打分</h2><p><b>开始前预测：</b>${safe(d.prediction)}</p><p class="small muted">以下对方反应由脚本编写，不能证明真实同事会如何反应。你的原话没有被自动语义评分。</p>${d.steps.map((x,i)=>`<details><summary>第${i+1}轮 · ${safe(COACH_ACTIONS[x.action])}</summary><p><b>对方：</b>${safe(coachPrompt(d,i))}</p><p><b>我的原话：</b>${safe(x.own)}</p><p><b>想追加的内容：</b>${safe(x.urge||'未记录')}</p></details>`).join('')}<h3>本场景的复盘依据</h3><ul>${s.points.map(p=>`<li>${safe(p)}</li>`).join('')}<li>最后一轮需要正常履职：说明必要事实或可实现的承诺。简短确认可以自然，重要时间最好明确。</li><li>是否过度解释，要看信息的作用和自己的意图，不能只数句子、道歉或表情。</li></ul>${coachCheckInputs('sim','coachReview')}${coachScoreInput('coachAfter','此刻不适程度',null,'coachReview','','coachAfter')}<label for="coachLearning">一个做得好的点 / 下次只改一个点（可选）</label><textarea id="coachLearning"${unsavedAttrs('coachReview','','','coachLearning')} maxlength="1200"></textarea><p class="small muted">不适没有下降也可保存。模拟与真实记录分开；不会因为分数高或不适下降而自动升难度。</p><div class="actions"><button id="coachFinish" class="primary">保存这次复盘</button></div></section>`;
  document.getElementById('coachFinish').onclick=()=>coachFinish(coachScore('coachAfter'),document.getElementById('coachLearning').value,coachChecks('sim'));
 }
 function renderCoachHistory(){

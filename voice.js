@@ -9,7 +9,7 @@ function stopVoice(){
 }
 function mountVoice(id){
  const slot=document.getElementById(id);if(!slot)return;
- slot.innerHTML=`<details><summary>可选：先出声练习并回听</summary><p class="small muted">只有点击录音才申请麦克风。录音仅在本页临时保存，不上传、不自动识别或评分，离开本题即清除。每次最长2分钟。听完仍需输入原话。</p><button type="button" class="secondary" id="recordVoice">开始录音</button> <span id="voiceStatus" class="small" role="status"></span><div id="voicePlayback"></div></details>`;
+ slot.innerHTML=`<details><summary>可选：先出声练习并回听</summary><p class="small muted">只有点击录音才申请麦克风。录音仅在本页临时保存，不上传、不自动识别或评分，离开本题即清除。每次最长2分钟。听完可用 iPhone 键盘上的麦克风听写，再确认文字；应用不会自动转写。</p><button type="button" class="secondary" id="recordVoice">开始录音</button> <span id="voiceStatus" class="small" role="status"></span><div id="voicePlayback"></div></details>`;
  const button=document.getElementById('recordVoice'),status=document.getElementById('voiceStatus'),playback=document.getElementById('voicePlayback');
  button.onclick=async()=>{
   if(voiceRecorder&&voiceRecorder.state==='recording'){voiceRecorder.stop();return}
@@ -28,7 +28,7 @@ function mountVoice(id){
     // iOS/Safari reports duration 0 for MediaRecorder blobs until the metadata is
     // seeked; force one seek so the native player shows the real length.
     audio.addEventListener('loadedmetadata',()=>{
-     if(audio.duration===Infinity||Number.isNaN(audio.duration)){
+     if(audio.duration===0||audio.duration===Infinity||Number.isNaN(audio.duration)){
       audio.currentTime=1e101;
       const reset=()=>{audio.currentTime=0;audio.removeEventListener('timeupdate',reset)};
       audio.addEventListener('timeupdate',reset);

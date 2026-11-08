@@ -26,7 +26,8 @@ for name,filename in [('bank','cards.json'),('dialogue-bank','dialogues.json')]:
 engine=root.joinpath('vendor/ts-fsrs-5.4.2.umd.js').read_text('utf-8')
 engine=re.sub(r'//# sourceMappingURL=.*','',engine)
 engine='/* ts-fsrs 5.4.2 — MIT License\n'+root.joinpath('vendor/LICENSE-ts-fsrs.txt').read_text('utf-8')+'\n*/\n'+engine
-app='\n'.join(root.joinpath(n).read_text('utf-8') for n in ['coach-data.js','data.js','form-guard.js','voice.js','mechanisms.js','single.js','settings.js','cloud.js','coach.js','app.js'])
+app='\n'.join(root.joinpath(n).read_text('utf-8') for n in ['coach-data.js','data.js','form-guard.js','voice.js','mechanisms.js','single.js','settings.js','cloud.js','coach.js','app.js','mobile.js','offline.js'])
+html=html.replace('/*MOBILE_CSS*/',root.joinpath('mobile.css').read_text('utf-8'))
 html=html.replace('/*FSRS_ENGINE*/',engine.replace('</script','<\\/script')).replace('/*APP_SOURCE*/',app.replace('</script','<\\/script'))
 root.joinpath('index.html').write_text(html,'utf-8',newline='\n')  # stable LF output across OSes
 print('Built self-contained index.html')

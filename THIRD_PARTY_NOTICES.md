@@ -14,3 +14,18 @@
 No new third-party code was added in v0.4.1; `form-guard.js` is written for this project and uses only browser built-ins.
 
 No LexiLoop production code, credentials or user data are included. No fonts or browser engines are redistributed; platform fonts are used by the app.
+
+
+## WorkBuddy Cloud SDK
+
+`vendor/workbuddy-cloud-sdk.js` is `lib/index.global.js` from the npm package
+`@tencent-ai/workbuddy-cloud-sdk@0.1.4-dev.ca27990.202610161713` (MIT).
+Full license: `vendor/LICENSE-workbuddy-cloud-sdk.txt`.
+Registry tarball integrity (verified by npm pack):
+`sha512-HyrXFiilbYFxDGF5pvl1MhBYvE9QnK39uJjiiefX07k7ppl2UPKfl6KWaN9yIzD1DtAGycl3fXaYOzHmvlIMpg==`.
+The hosted application loads this fixed same-origin copy only when requested;
+the file:// build uses the same exact package version on jsDelivr.
+
+The keyboard-aware controls and offline-shell design were adapted from
+`issac-js/lexiloop` at `655adacd937ce59b45168757c2d32856cb3f0957`.
+This application retains its own data format and pinned ts-fsrs implementation.

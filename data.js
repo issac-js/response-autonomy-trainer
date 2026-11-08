@@ -1,10 +1,14 @@
 // Persistence and migration are independent of UI and scheduler internals.
-const STORE='response-autonomy-v01', APP_VERSION='0.8.1';
+const STORE='response-autonomy-v01', APP_VERSION='0.9.0';
 const TODAY=()=>new Date().toLocaleDateString('sv-SE');
 const defaultData=()=>({version:1,schemaVersion:3,appVersion:APP_VERSION,revision:0,created:new Date().toISOString(),settings:{newPerDay:5,timer:false,showReason:true},cards:{},history:[],writes:{},dialogueHistory:[],coach:newCoach()});
 const record=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const validDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s))&&new Date(s).toISOString().slice(0,10)===s;
 const validTime=s=>typeof s==='string'&&/^\d{4}-\d\d-\d\dT/.test(s)&&Number.isFinite(Date.parse(s));
+function validGeneratedSnapshot(c){
+ const text=(v,max)=>typeof v==='string'&&v.trim().length>0&&v.length<=max;
+ return record(c)&&c.generated===true&&/^RA-\d{3}$/.test(c.id)&&text(c.scene,300)&&text(c.question,200)&&Array.isArray(c.options)&&c.options.length===4&&c.options.every(v=>text(v,120))&&Number.isInteger(c.correct)&&c.correct>=0&&c.correct<4&&['rationale','principle','model'].every(k=>text(c[k],300));
+}
 function validateData(obj){
  const fail=s=>{throw Error('备份校验失败：'+s)};
  const text=(x,max)=>typeof x==='string'&&x.length<=max;
@@ -76,8 +80,9 @@ function adoptRemote(obj,revision){
  const rev=Number.isSafeInteger(revision)&&revision>0?revision:(candidate.revision||0);
  const next={...candidate,revision:rev};
  const before=localStorage.getItem(STORE),raw=JSON.stringify(next);
+ if(before!==persistedRaw)throw Error('其他页面已修改记录，未覆盖本机。');
+ if(before!==null)localStorage.setItem(STORE+'-before-remote',before);
  localStorage.setItem(STORE,raw);
- if(before!==null)try{localStorage.setItem(STORE+'-before-remote',before)}catch(e){}
  data=next;persistedRaw=raw;storageFault='';pendingBackup=null;
  return true;
 }

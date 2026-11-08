@@ -1,14 +1,15 @@
+const {navigate}=require('./ui-helpers.cjs');
 // P1 skip-classification, P2 mechanism recognition, P4 AI entry point.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
-const root=path.resolve(__dirname,'..'),url='file://'+path.join(root,'index.html');
+const root=path.resolve(__dirname,'..'),url=process.env.RAT_TEST_ORIGIN||'file://'+path.join(root,'index.html');
 const result={tests:[],errors:[],externalRequests:[]};
 async function main(){
  const b=await chromium.launch({headless:true});
  async function fresh(){
   const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();
   p.on('pageerror',e=>result.errors.push(e.message));
-  p.on('request',r=>{if(/^https?:/.test(r.url()))result.externalRequests.push(r.url())});
+  p.on('request',r=>{if(/^https?:/.test(r.url())&&(!url.startsWith('http')||new URL(r.url()).origin!==new URL(url).origin))result.externalRequests.push(r.url())});
   p.on('dialog',d=>d.accept());
   await p.goto(url);return {c,p};
  }
@@ -18,6 +19,7 @@ async function main(){
   await p.fill('#reply','合成原话：我需要先确认授权范围。');
   await p.click('#commitSingle');
   if(skip)await p.click('[data-choice=skip]');else await p.click('[data-choice="0"]');
+  await p.locator('.optional-review > summary').click();
  }
 
  await test('advanced pack is present with one mechanism each',async()=>{
@@ -79,7 +81,7 @@ async function main(){
 
  await test('bank offers three challenge levels',async()=>{
   const {c,p}=await fresh();
-  await p.click('[data-nav=bank]');
+  await navigate(p,'bank');
   assert.equal(await p.locator('[data-challenge]').count(),3);
   assert.deepEqual(await p.locator('[data-challenge]').evaluateAll(els=>els.map(e=>e.dataset.challenge)),['ramp','hard','hell']);
   await c.close();
@@ -110,7 +112,7 @@ async function main(){
   const {c,p}=await fresh();
   await p.evaluate(()=>{challengeLevel='hard';challengeStep=0;startGenerated({id:'RA-901',group:'随机挑战',generated:true,level:'高难',mechanism:'authority',mechanismWhy:'借权威',signal:'权威',scene:'合成情境',question:'“合成问题？”',options:['甲','乙','丙','丁'],correct:1,rationale:'合成解析',principle:'合成要点',model:'“合成示范。”'});});
   await p.fill('#reply','合成回答');await p.click('#commitSingle');await p.click('[data-choice=skip]');
-  await p.click('[data-mech=authority]');await p.click('[data-rate=good]');
+  await p.locator('.optional-review > summary').click();await p.click('[data-mech=authority]');await p.click('[data-rate=good]');
   assert.match(await p.locator('#root').innerText(),/挑战完成一题/);
   assert.equal(await p.locator('#chNext').count(),1);
   assert.equal(await p.evaluate('data.history[0].id'),'RA-901');

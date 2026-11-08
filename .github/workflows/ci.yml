@@ -28,3 +28,73 @@ jobs:
         run: |
           python rebuild.py
           git diff --exit-code -- index.html
+
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install isolated browser tools
+        run: |
+          npm install --prefix "$RUNNER_TEMP/browser-tools" --no-audit --no-fund --ignore-scripts playwright@1.58.2
+          node "$RUNNER_TEMP/browser-tools/node_modules/playwright/cli.js" install --with-deps ${{ matrix.browser }}
+      - name: Local mobile, synchronization and offline regressions
+        env:
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/browser-tools/node_modules/playwright
+          RAT_BROWSER: ${{ matrix.browser }}
+          RAT_RESULTS_DIR: ${{ runner.temp }}/rat-results
+        run: node tests/readiness.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: readiness-${{ matrix.browser }}-${{ github.sha }}
+          path: ${{ runner.temp }}/rat-results
+          if-no-files-found: error
+
+  ios-safari:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare Simulator
+        run: |
+          if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
+          python3 - <<'PYIOS'
+          import json, os, subprocess
+          devices = json.loads(subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '-j']))['devices']
+          sdk = tuple(map(int, subprocess.check_output(['xcrun', '--sdk', 'iphonesimulator', '--show-sdk-version'], text=True).strip().split('.')))
+          runtimes = [r for r in devices if '.iOS-' in r and tuple(map(int, r.split('.iOS-')[-1].split('-'))) <= sdk]
+          candidates = [d for runtime in sorted(runtimes, reverse=True) for d in devices[runtime] if d['name'].startswith('iPhone')]
+          if not candidates: raise SystemExit('No iPhone Simulator available')
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('RAT_SIMULATOR_ID=' + candidates[0]['udid'] + '\n')
+          PYIOS
+      - name: Start local application and Simulator
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > "$RUNNER_TEMP/rat-server.log" 2>&1 &
+          curl --retry 10 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:8765/ -o /dev/null
+          xcrun simctl boot "$RAT_SIMULATOR_ID" || true
+          xcrun simctl bootstatus "$RAT_SIMULATOR_ID" -b
+          defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool NO
+          open -a Simulator
+      - name: Native Safari keyboard and practice
+        run: |
+          cd tools/ios
+          xcodegen generate
+          xcodebuild test -project ResponseAutonomySafariQA.xcodeproj -scheme SafariQA -destination "platform=iOS Simulator,id=$RAT_SIMULATOR_ID" -parallel-testing-enabled NO -resultBundlePath "$RUNNER_TEMP/ResponseAutonomySafari.xcresult" CODE_SIGNING_ALLOWED=NO
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-safari-${{ github.sha }}
+          path: ${{ runner.temp }}/ResponseAutonomySafari.xcresult
+          if-no-files-found: error

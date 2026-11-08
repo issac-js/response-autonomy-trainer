@@ -22,3 +22,7 @@ tests/.browsers/
 
 # Local browser-cache junctions used by the Playwright suites
 .browser-links/
+
+# Generated iOS test project
+/tools/ios/*.xcodeproj/
+/tools/ios/build/

@@ -15,7 +15,7 @@ async function main(){
  const base='http://127.0.0.1:'+server.address().port+'/';
  const b=await chromium.launch({headless:true});
  async function fresh(){
-  const p=await b.newPage({viewport:{width:390,height:844}});
+  const p=await b.newPage({viewport:{width:960,height:844}});
   p.on('pageerror',e=>result.errors.push(e.message));
   p.on('request',r=>{if(/^https?:/.test(r.url())&&!r.url().startsWith(base))result.externalRequests.push(r.url())});
   p.on('dialog',d=>d.accept());
@@ -25,8 +25,8 @@ async function main(){
  const p=await fresh();
 
  await test('http origin serves the self-contained app with both storages available',async()=>{
-  assert.match(await p.title(),/v0\.8\.1/);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.8.1');
+  assert.match(await p.title(),/v0\.9\.0/);
+  assert.equal(await p.evaluate('APP_VERSION'),'0.9.0');
   assert.equal(await p.evaluate("(()=>{try{localStorage.setItem('__probe','1');sessionStorage.setItem('__probe','1');localStorage.removeItem('__probe');sessionStorage.removeItem('__probe');return true}catch(e){return false}})()"),true);
   assert.equal(await p.evaluate('typeof crypto.randomUUID'),'function');
  });
@@ -34,7 +34,7 @@ async function main(){
  await test('recall, FSRS and the daily counter persist across an http reload',async()=>{
   await p.click('#daily');
   await p.fill('#reply','合成 HTTP 单轮回答');await p.click('#commitSingle');
-  await p.click('[data-choice=other]');await p.fill('#reflection','合成复盘');await p.click('[data-rate=good]');
+  await p.click('[data-choice=other]');await p.locator('.optional-review > summary').click();await p.fill('#reflection','合成复盘');await p.click('[data-rate=good]');
   const due=await p.evaluate("data.cards['RA-001'].fsrs.due");
   assert.ok(due);
   await p.reload();
@@ -69,7 +69,7 @@ async function main(){
   assert.equal(await p.locator('#realContext').inputValue(),'HTTP 未保存文本');
   assert.equal(await p.evaluate('data.coach.experiments.length'),1);
   assert.equal(await p.locator('#unsavedNotice').isVisible(),true);
-  await p.click('#unsavedClear');
+  await p.locator('#unsavedNotice summary').click();await p.click('#unsavedClear');
   assert.equal(await p.evaluate("sessionStorage.getItem(UNSAVED_KEY)"),null);
  });
 

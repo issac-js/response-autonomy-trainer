@@ -1,8 +1,9 @@
+const {navigate}=require('./ui-helpers.cjs');
 // A+B minimal: three-tap self-check after rating, counters without scores,
 // and a tendency only after 8 self-checked records.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
-const root=path.resolve(__dirname,'..'),url='file://'+path.join(root,'index.html');
+const root=path.resolve(__dirname,'..'),url=process.env.RAT_TEST_ORIGIN||'file://'+path.join(root,'index.html');
 const result={tests:[],errors:[]};
 async function main(){
  const b=await chromium.launch({headless:true});
@@ -14,7 +15,7 @@ async function main(){
  async function test(name,f){await f();result.tests.push(name);console.log('PASS '+name)}
  async function answer(p,self){
   await p.evaluate("start('single',['RA-001'])");await p.fill('#reply','合成自评原话');
-  await p.click('#commitSingle');await p.click('[data-choice="0"]');
+  await p.click('#commitSingle');await p.click('[data-choice="0"]');await p.locator('.optional-review > summary').click();
   if(self)for(const [k,v] of Object.entries(self))await p.click(`[data-self="${k}:${v}"]`);
   await p.click('[data-rate="good"]');
  }
@@ -22,7 +23,7 @@ async function main(){
  await test('rate step offers nine one-tap options in three groups',async()=>{
   const {c,p}=await fresh();
   await p.evaluate("start('single',['RA-001'])");await p.fill('#reply','合成原话');
-  await p.click('#commitSingle');await p.click('[data-choice="0"]');
+  await p.click('#commitSingle');await p.click('[data-choice="0"]');await p.locator('.optional-review > summary').click();
   assert.equal(await p.locator('[data-self]').count(),9);
   assert.equal(await p.locator('.selfrow').count(),3);
   await c.close();
@@ -39,7 +40,7 @@ async function main(){
  await test('tapping the same option again clears that dimension',async()=>{
   const {c,p}=await fresh();
   await p.evaluate("start('single',['RA-001'])");await p.fill('#reply','合成原话');
-  await p.click('#commitSingle');await p.click('[data-choice="0"]');
+  await p.click('#commitSingle');await p.click('[data-choice="0"]');await p.locator('.optional-review > summary').click();
   await p.click('[data-self="fact:guess"]');
   assert.equal(await p.getAttribute('[data-self="fact:guess"]','aria-pressed'),'true');
   await p.click('[data-self="fact:guess"]');

@@ -1,0 +1,28 @@
+/* Adapted from LexiLoop's keyboard-aware grade bar; no runtime coupling. */
+#practiceBar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+#practiceStep{font-size:13px;color:var(--muted)}
+#practiceStatus:empty{display:none}
+#practiceStatus{font-size:13px;color:var(--muted)}
+.grade-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.grade-actions button{min-width:0}
+.optional-review{margin:16px 0}
+.draft-info{margin:0;padding:0;border:0}
+.draft-info summary{font-weight:600}
+.panel label:has(input[type=checkbox]){display:flex;align-items:center;gap:8px;min-height:44px}
+@media(max-width:610px){
+ body.in-practice .hero,body.in-practice>.app>.nav{display:none}
+ body.in-practice .app{padding-top:calc(8px + env(safe-area-inset-top))}
+ #practiceBar{position:sticky;top:0;background:var(--surface);z-index:10;padding:8px;border-radius:10px}
+ #practiceBack{font-size:14px}
+ #practiceStep{max-width:45%;text-align:right}
+ #root{padding-bottom:var(--action-clearance,0px)}
+ .mobile-actions{position:fixed;bottom:0;left:0;right:0;z-index:20;margin:0;
+  padding:10px max(12px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+  background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -4px 18px #0000000b}
+ .mobile-actions>button:only-child{width:100%}
+ body.keyboard-open .mobile-actions{position:static;padding:0;margin-top:15px;border:0;box-shadow:none}
+ body.keyboard-open #practiceBar{position:static}
+ body.keyboard-open #root{padding-bottom:0}
+ .notice{padding:8px 10px}
+ .hero p{display:none}
+}

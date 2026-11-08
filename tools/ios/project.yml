@@ -1,0 +1,38 @@
+name: ResponseAutonomySafariQA
+options:
+  bundleIdPrefix: invalid.example.responseautonomy
+  deploymentTarget:
+    iOS: '17.0'
+settings:
+  base:
+    CODE_SIGNING_ALLOWED: NO
+    SWIFT_VERSION: '5.0'
+targets:
+  FixtureLauncher:
+    type: application
+    platform: iOS
+    sources: [App.swift]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: invalid.example.responseautonomy.fixture
+        TARGETED_DEVICE_FAMILY: '1,2'
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+  SafariTests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [SafariTests.swift]
+    dependencies:
+      - target: FixtureLauncher
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: invalid.example.responseautonomy.uitests
+schemes:
+  SafariQA:
+    build:
+      targets:
+        FixtureLauncher: all
+        SafariTests: [test]
+    test:
+      targets: [SafariTests]
