@@ -1,5 +1,5 @@
 // Optional local recording. No speech-recognition service or audio upload.
-let voiceRecorder=null,voiceStream=null,voiceURL=null,voiceGeneration=0,voiceTimer=null;
+let voiceRecorder=null,voiceStream=null,voiceURL=null,voiceGeneration=0,voiceTimer=null,voiceStartedAt=0;
 function stopVoice(){
  voiceGeneration++;clearTimeout(voiceTimer);
  if(voiceRecorder&&voiceRecorder.state!=='inactive')voiceRecorder.stop();
@@ -23,12 +23,23 @@ function mountVoice(id){
    recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
    recorder.onstop=()=>{clearTimeout(voiceTimer);stream.getTracks().forEach(t=>t.stop());if(voiceStream===stream)voiceStream=null;
     if(generation!==voiceGeneration||!slot.isConnected)return;
-    voiceRecorder=null;voiceURL=URL.createObjectURL(new Blob(chunks,{type:recorder.mimeType}));
-    const audio=document.createElement('audio');audio.controls=true;audio.src=voiceURL;audio.setAttribute('aria-label','我的回应录音');playback.replaceChildren(audio);
-    button.textContent='重新录音';status.textContent='录音已停止，可回听。';
+    voiceRecorder=null;voiceURL=URL.createObjectURL(new Blob(chunks,{type:recorder.mimeType||'audio/mp4'}));
+    const audio=document.createElement('audio');audio.controls=true;audio.preload='metadata';audio.src=voiceURL;audio.setAttribute('aria-label','我的回应录音');
+    // iOS/Safari reports duration 0 for MediaRecorder blobs until the metadata is
+    // seeked; force one seek so the native player shows the real length.
+    audio.addEventListener('loadedmetadata',()=>{
+     if(audio.duration===Infinity||Number.isNaN(audio.duration)){
+      audio.currentTime=1e101;
+      const reset=()=>{audio.currentTime=0;audio.removeEventListener('timeupdate',reset)};
+      audio.addEventListener('timeupdate',reset);
+     }
+    });
+    playback.replaceChildren(audio);
+    const secs=Math.max(1,Math.round((Date.now()-voiceStartedAt)/1000));
+    button.textContent='重新录音';status.textContent='已录 '+secs+' 秒，可回听。';
    };
    recorder.onerror=()=>{status.textContent='录音中断，可以继续文字训练。';stopVoice();button.textContent='开始录音'};
-   recorder.start();button.textContent='停止并回听';status.textContent='正在录音（最长2分钟）';
+   recorder.start();voiceStartedAt=Date.now();button.textContent='停止并回听';status.textContent='正在录音（最长2分钟）';
    voiceTimer=setTimeout(()=>{if(recorder.state==='recording')recorder.stop()},120000);
   }catch(e){status.textContent=e.name==='NotAllowedError'?'未获得麦克风权限，可以继续文字训练。':'录音暂不可用，可以继续文字训练。';stopVoice()}
   finally{button.disabled=false}

@@ -7,4 +7,5 @@ PASS quota failure on the main write leaves no orphan pre-import snapshot
 PASS snapshot-only failure: import still succeeds, reports no snapshot and removes stale one
 PASS transient form buffer uses a separate key and never touches the persistent record
 PASS coach validation still accepts legacy-shaped records with arbitrary ids
-{"passed":9}
+PASS self-check values are validated: allowed pass, unknown keys and values fail
+{"passed":10}

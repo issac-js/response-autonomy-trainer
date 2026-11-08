@@ -1,5 +1,5 @@
 // Persistence and migration are independent of UI and scheduler internals.
-const STORE='response-autonomy-v01', APP_VERSION='0.5.0';
+const STORE='response-autonomy-v01', APP_VERSION='0.6.0';
 const TODAY=()=>new Date().toLocaleDateString('sv-SE');
 const defaultData=()=>({version:1,schemaVersion:3,appVersion:APP_VERSION,revision:0,created:new Date().toISOString(),settings:{newPerDay:5,timer:false,showReason:true},cards:{},history:[],writes:{},dialogueHistory:[],coach:newCoach()});
 const record=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -28,7 +28,8 @@ function validateData(obj){
   }
  }
  for(const h of obj.history){if(!record(h)||!/^RA-\d{3}$/.test(h.id)||!validDate(h.date)||![true,false,null].includes(h.correct)||!['again','hard','good','easy'].includes(h.grade)||!text(h.answer,1500))fail('单轮历史无效');
-  if(h.fsrsLog!==undefined){const l=h.fsrsLog;if(!record(l)||!validTime(l.review)||!validTime(l.due)||![1,2,3,4].includes(l.rating))fail('复习日志无效');
+  if(h.self!==undefined){const sc=h.self;if(!record(sc))fail('自评结构无效');for(const k of Object.keys(sc))if(!['fact','length','pause'].includes(k))fail('自评包含未知字段');for(const [k,vals] of [['fact',['fact','guess','unsure']],['length',['ok','long','short']],['pause',['yes','no','unsure']]])if(sc[k]!==undefined&&!vals.includes(sc[k]))fail('自评取值无效')}
+ if(h.fsrsLog!==undefined){const l=h.fsrsLog;if(!record(l)||!validTime(l.review)||!validTime(l.due)||![1,2,3,4].includes(l.rating))fail('复习日志无效');
    for(const k of ['stability','difficulty','elapsed_days','last_elapsed_days','scheduled_days','learning_steps','state'])if(!Number.isFinite(l[k])||l[k]<0)fail('复习日志参数无效');
   }
  }

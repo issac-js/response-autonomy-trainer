@@ -1,0 +1,12 @@
+{
+  "tests": [
+    "rate step offers nine one-tap options in three groups",
+    "selected self-checks are stored and unselected keys are omitted",
+    "tapping the same option again clears that dimension",
+    "export and re-import keep the self-check fields",
+    "stats show raw counters but no tendency below eight samples",
+    "a tendency appears once eight records exist and stays non-scoring",
+    "no page errors in the self-check runs"
+  ],
+  "errors": []
+}

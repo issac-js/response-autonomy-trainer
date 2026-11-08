@@ -1,9 +1,10 @@
+const SELF_ROWS=[{k:'fact',label:'我说明的是',opts:[['fact','事实'],['guess','推测'],['unsure','不确定']]},{k:'length',label:'这次的篇幅',opts:[['ok','刚好'],['long','偏长'],['short','偏短']]},{k:'pause',label:'说完后我停住了吗',opts:[['yes','停住了'],['no','又补了'],['unsure','不确定']]}];
 function advance(){
  clearTimer();stopVoice();today=TODAY();
  if(!session.length){current=null;renderPlay();return}
  current=byId[session.shift()];viewOptions=current.options.map((_,i)=>i);
  for(let i=viewOptions.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[viewOptions[i],viewOptions[j]]=[viewOptions[j],viewOptions[i]]}
- picked=null;phase='own';textDraft='';remaining=15;timerExpired=false;renderPlay();
+ picked=null;phase='own';textDraft='';selfDraft={};remaining=15;timerExpired=false;renderPlay();
  if(data.settings.timer)timerHandle=setInterval(()=>{remaining--;const el=document.getElementById('time');if(el)el.textContent=remaining>0?remaining+'秒':'可以慢慢想，不扣分';if(remaining<=0)clearTimer()},1000);
 }
 function renderPlay(){
@@ -15,7 +16,7 @@ function renderPlay(){
  else {
   const correct=picked===c.correct,other=picked==='other';
   const now=new Date(),preview=Object.fromEntries(['again','hard','good','easy'].map(r=>[r,scheduleReview(state(c.id),r,now).card.due]));
-  body=`<h2>第三步 · 反馈与自评</h2><div class="quote-reply"><b>你的原话：</b>${safe(textDraft)}</div><div class="feedback ${correct?'good':'bad'}"><b>${other?'保留你的独立回应':correct?'策略判断方向合适':'可以重新检查这一处判断'}</b><p>${safe(c.rationale)}</p><b>结构要点：</b>${safe(c.principle)}</div><details><summary>查看一种示范表达</summary><p>${safe(c.model)}</p></details><p class="small muted">系统没有自动评判你的原话。请对照情境：该答的是否回答？不实前提是否纠正？信息是否合乎授权？表达是否自然、适量？</p><label for="reflection">一个做得好的点 / 下次想改的点（可选）</label><textarea id="reflection"${unsavedAttrs('single',c.id,'','reflection')} maxlength="1000" placeholder="例如：我说明了进度；下次补上下一次更新时间。"></textarea><h3>按自己原话的实际表现选择</h3><p class="small muted">选项判断和自由回应分开记录。以下选择决定复习时间；不要求逐字复述示范。</p><div class="actions">${[['again','需要再练'],['hard','勉强做到'],['good','独立做到'],['easy','轻松做到']].map(([r,label])=>`<button class="${r==='good'?'primary':'secondary'}" data-rate="${r}">${label}<br><span class="small">${formatDue(preview[r],now)}</span></button>`).join('')}</div>`;
+  body=`<h2>第三步 · 反馈与自评</h2><div class="quote-reply"><b>你的原话：</b>${safe(textDraft)}</div><div class="feedback ${correct?'good':'bad'}"><b>${other?'保留你的独立回应':correct?'策略判断方向合适':'可以重新检查这一处判断'}</b><p>${safe(c.rationale)}</p><b>结构要点：</b>${safe(c.principle)}</div><details><summary>查看一种示范表达</summary><p>${safe(c.model)}</p></details><p class="small muted">系统没有自动评判你的原话。请对照情境：该答的是否回答？不实前提是否纠正？信息是否合乎授权？表达是否自然、适量？</p><label for="reflection">一个做得好的点 / 下次想改的点（可选）</label><textarea id="reflection"${unsavedAttrs('single',c.id,'','reflection')} maxlength="1000" placeholder="例如：我说明了进度；下次补上下一次更新时间。"></textarea><h3>30 秒自评 · 三项</h3><p class="small muted">只记录自己的观察，不评分、不计入复习时间；样本满 8 次后才在复盘里给一条倾向。</p>${SELF_ROWS.map(r=>`<div class="selfrow"><span class="small">${r.label}</span><div class="segwrap">${r.opts.map(([v,t])=>`<button type="button" class="seg ${selfDraft[r.k]===v?'on':''}" data-self="${r.k}:${v}" aria-pressed="${selfDraft[r.k]===v}">${t}</button>`).join('')}</div></div>`).join('')}<h3>按自己原话的实际表现选择</h3><p class="small muted">选项判断和自由回应分开记录。以下选择决定复习时间；不要求逐字复述示范。</p><div class="actions">${[['again','需要再练'],['hard','勉强做到'],['good','独立做到'],['easy','轻松做到']].map(([r,label])=>`<button class="${r==='good'?'primary':'secondary'}" data-rate="${r}">${label}<br><span class="small">${formatDue(preview[r],now)}</span></button>`).join('')}</div>`;
  }
  root.innerHTML=`<section class="panel"><div class="split"><span class="pill">${safe(c.group)}</span><span class="step">${session.length}张待练</span></div><div class="scene"><div class="small muted">${safe(c.scene)}</div><div class="quote">“${safe(c.question)}”</div></div>${body}</section>`;
  if(phase==='own'){
@@ -24,7 +25,7 @@ function renderPlay(){
   commit.onclick=()=>{if(!textDraft.trim())return;clearTimer();stopVoice();phase='pick';renderPlay()};mountVoice('voice-slot');
  }
  if(phase==='pick')root.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>choose(b.dataset.choice==='other'?'other':Number(b.dataset.choice)));
- if(phase==='rate')root.querySelectorAll('[data-rate]').forEach(b=>b.onclick=()=>rate(b.dataset.rate));
+ if(phase==='rate'){root.querySelectorAll('[data-self]').forEach(b=>b.onclick=()=>{const [k,v]=b.dataset.self.split(':');selfDraft[k]=selfDraft[k]===v?null:v;root.querySelectorAll('[data-self^="'+k+':"]').forEach(x=>{const on=x.dataset.self.split(':')[1]===selfDraft[k];x.classList.toggle('on',on);x.setAttribute('aria-pressed',on?'true':'false')})});root.querySelectorAll('[data-rate]').forEach(b=>b.onclick=()=>rate(b.dataset.rate))}
 }
 function formatDue(d,now=new Date()){
  const minutes=Math.max(1,Math.round((new Date(d)-now)/60000));
@@ -35,7 +36,7 @@ function rate(r){
  if(phase!=='rate'||!['again','hard','good','easy'].includes(r))return;
  today=TODAY();const c=current,s={...state(c.id)},now=new Date(),result=scheduleReview(s,r,now),correct=picked==='other'?null:picked===c.correct;
  s.first||=today;s.seen=(s.seen||0)+1;s.correct=(s.correct||0)+(correct===true?1:0);s.last=today;s.due=new Date(result.card.due).toLocaleDateString('sv-SE');s.fsrs=JSON.parse(JSON.stringify(result.card));
- data.cards[c.id]=s;data.history.push({date:today,at:now.toISOString(),id:c.id,correct,grade:r,mode:source,answer:textDraft.trim(),selected:picked,reflection:document.getElementById('reflection').value,engine:'ts-fsrs@5.4.2/FSRS-6',fsrsLog:JSON.parse(JSON.stringify(result.log))});
+ data.cards[c.id]=s;const entry={date:today,at:now.toISOString(),id:c.id,correct,grade:r,mode:source,answer:textDraft.trim(),selected:picked,reflection:document.getElementById('reflection').value,engine:'ts-fsrs@5.4.2/FSRS-6',fsrsLog:JSON.parse(JSON.stringify(result.log))};const self=Object.fromEntries(Object.entries(selfDraft).filter(([,v])=>v));if(Object.keys(self).length)entry.self=self;data.history.push(entry);
  if(!save())return;
  unsavedClear('single',c.id);
  // The FSRS due time controls reappearance. No immediate artificial repeat.

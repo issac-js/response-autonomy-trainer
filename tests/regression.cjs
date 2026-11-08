@@ -24,7 +24,7 @@ test('storage identity unchanged: key, version 1, schema 3, no new persistent fi
  const d=JSON.parse(e.run('JSON.stringify(defaultData())'));
  assert.equal(d.version,1);assert.equal(d.schemaVersion,3);
  assert.deepEqual(Object.keys(d).sort(),['appVersion','cards','coach','created','dialogueHistory','history','revision','schemaVersion','settings','version','writes']);
- assert.equal(e.run('APP_VERSION'),'0.5.0');
+ assert.equal(e.run('APP_VERSION'),'0.6.0');
 });
 test('v0.3 in-memory migration does not rewrite disk; due and old payloads intact',()=>{
  const raw=JSON.stringify(legacy),e=env(raw);
@@ -87,5 +87,13 @@ test('coach validation still accepts legacy-shaped records with arbitrary ids',(
  e.run('data.coach.experiments.push('+JSON.stringify(x)+')');
  assert.equal(e.run('save()'),true);
  assert.equal(e.run('data.coach.experiments[0].id'),'a"><b');
+});
+test('self-check values are validated: allowed pass, unknown keys and values fail',()=>{
+ const good=JSON.parse(JSON.stringify(legacy));good.history[0].self={fact:'guess',length:'long',pause:'no'};
+ assert.doesNotThrow(()=>env().run('validateData('+JSON.stringify(good)+')'));
+ const badValue=JSON.parse(JSON.stringify(legacy));badValue.history[0].self={fact:'maybe'};
+ assert.throws(()=>env().run('validateData('+JSON.stringify(badValue)+')'),/自评取值无效/);
+ const badKey=JSON.parse(JSON.stringify(legacy));badKey.history[0].self={mood:'x'};
+ assert.throws(()=>env().run('validateData('+JSON.stringify(badKey)+')'),/自评包含未知字段/);
 });
 console.log(JSON.stringify({passed}));
