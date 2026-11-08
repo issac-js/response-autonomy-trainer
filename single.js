@@ -26,9 +26,9 @@ function renderPlay(){
  if(phase==='own'){
   const input=document.getElementById('reply'),commit=document.getElementById('commitSingle');
   input.oninput=()=>{textDraft=input.value;commit.disabled=!textDraft.trim()};
-  commit.onclick=()=>{if(!textDraft.trim())return;clearTimer();stopVoice();phase='pick';renderPlay()};mountVoice('voice-slot');
+  firstTap(commit,()=>{if(!textDraft.trim())return;clearTimer();stopVoice();phase='pick';renderPlay()});mountVoice('voice-slot');
  }
- if(phase==='pick')root.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>choose(b.dataset.choice));
+ if(phase==='pick')root.querySelectorAll('[data-choice]').forEach(b=>firstTap(b,()=>choose(b.dataset.choice)));
  if(phase==='rate'){
   const wrap=document.getElementById('mechWrap');
   if(wrap)wrap.querySelectorAll('[data-mech]').forEach(b=>b.onclick=()=>{
@@ -46,7 +46,7 @@ function renderPlay(){
    finally{aiBusy=false;aiBtn.disabled=false}
   };
   root.querySelectorAll('[data-self]').forEach(b=>b.onclick=()=>{const [k,v]=b.dataset.self.split(':');selfDraft[k]=selfDraft[k]===v?null:v;root.querySelectorAll('[data-self^="'+k+':"]').forEach(x=>{const on=x.dataset.self.split(':')[1]===selfDraft[k];x.classList.toggle('on',on);x.setAttribute('aria-pressed',on?'true':'false')})});
-  root.querySelectorAll('[data-rate]').forEach(b=>b.onclick=()=>rate(b.dataset.rate));
+  root.querySelectorAll('[data-rate]').forEach(b=>firstTap(b,()=>rate(b.dataset.rate)));
  }
 }
 function mdBold(s){return safe(String(s||'')).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}

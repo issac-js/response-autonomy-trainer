@@ -57,6 +57,28 @@ function mobileRefresh(){
  practiceRemember();
 }
 function keyboardTarget(el){return el&&((el.tagName==='INPUT'&&!/^(checkbox|radio|range|button|submit|reset|file|color|hidden)$/i.test(el.type))||/^(TEXTAREA|SELECT)$/.test(el.tagName))}
+// iOS Safari dispatches click ~300ms after the touch. When the focused field
+// blurs, keyboardFinish removes .keyboard-open on a 300ms timer and the action
+// bar jumps from in-flow back to position:fixed, so the delayed click lands
+// where the button no longer is. Bind the action to pointerup as well and
+// de-duplicate, so one tap still runs the action exactly once.
+function firstTap(el,action){
+ if(!el)return;
+ let startX=0,startY=0,tracking=false,lastRun=0;
+ const run=()=>{const now=Date.now();if(now-lastRun<600)return;lastRun=now;action();keyboardFinish()};
+ el.addEventListener('pointerdown',event=>{tracking=true;startX=event.clientX;startY=event.clientY});
+ el.addEventListener('pointerup',event=>{
+  if(!tracking)return;tracking=false;
+  // Only the keyboard-open case races: the delayed click can land after the
+  // action bar has returned to position:fixed. Without the keyboard the normal
+  // click path stays exactly as before.
+  if(!document.body.classList.contains('keyboard-open'))return;
+  if(Math.hypot(event.clientX-startX,event.clientY-startY)>10)return;
+  run();
+ });
+ el.addEventListener('pointercancel',()=>{tracking=false});
+ el.addEventListener('click',run);
+}
 let blurTimer;
 function keyboardFinish(){clearTimeout(blurTimer);if(!keyboardTarget(document.activeElement))document.body.classList.remove('keyboard-open');mobileRefresh()}
 document.addEventListener('focusin',e=>{if(matchMedia('(pointer: coarse)').matches&&keyboardTarget(e.target)){clearTimeout(blurTimer);document.body.classList.add('keyboard-open');mobileRefresh()}});
