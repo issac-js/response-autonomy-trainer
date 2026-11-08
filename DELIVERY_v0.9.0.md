@@ -26,7 +26,7 @@
 ## 未验证与发布前检查
 
 - WebKit安装被本环境网络策略拒绝（403 Domain forbidden，cdn.playwright.dev与playwright.download.prss.microsoft.com），不计通过。
-- 已准备Chromium/WebKit CI矩阵与macOS原生iOS Simulator Safari键盘/作答流程；尚未远端执行，不计通过。
+- 用户提供的CI run #3（7b92fa0）：core与Chromium通过；WebKit离线导航及iOS Safari首次提交未推进失败。最新诊断提交必须重新核对四个job的实际结果，不沿用旧结论。
 - 真实iPhone Safari、主屏幕模式、锁屏/后台恢复、真实麦克风与VoiceOver尚需人工检查。设备尺寸模拟不能替代这些验收。
 - 生产OTP、账号隔离/RLS与真实跨设备同步未调用。并发保护已用夹具验证，但生产SDK和后端组合仍需在隔离测试账号下验收。不得拿真实个人训练记录试覆盖。
 
@@ -43,3 +43,13 @@
 
 参考 `issac-js/lexiloop@655adacd937ce59b45168757c2d32856cb3f0957` 的键盘布局、底部评分留白、离线壳及Simulator验收结构；未修改LexiLoop，也未迁移其数据库或FSRS实现。
 手机和离线模块只在原有装配序列之后追加。不要直接改index.html。环境依赖与结果放在仓库之外，不提交setup-tools、token或个人训练内容。
+
+
+## run #3 发布阻断与诊断改动
+
+以四个job全绿为发布门槛：core、browsers (chromium)、browsers (webkit)、ios-safari。
+当前补丁不修改产品交互，不跳过任何引擎的用例，也不把诊断断言当作产品修复。
+
+- **Safari首次提交**：先验证确认按钮的 `isEnabled`，再只点击一次。点击前、点击后、等待策略步骤后均保留截图；若未找到策略按钮，另保留Safari辅助功能层级。按钮灰掉/点击未推进/新步骤已出现但不在辅助功能树，是不同诊断结果，必须结合本次Simulator产物区分后再决定是否修改产品代码。完整流程的竖屏、横屏截图继续保存，并断言评分后键盘已消失。不通过第二次点击、额外键盘关闭或合成input事件掩盖问题。
+- **WebKit离线导航限制**：根据用户提供的run #3，Playwright WebKit 26.0（v2248）在 `setOffline(true)` 后 `goto` 等待load时报内部错误；这里记录为已知测试器兼容性现象，未在本机独立复现或证明引擎根因。替代验证统一对所有引擎执行 `reload({waitUntil:'commit'})`，走同一受控URL的Service Worker导航处理，再等待新文档中的应用初始化。重载前标记必须消失，以免旧页面冒充离线重开成功。原断言全部保留：APP_VERSION为0.9.0、daily入口存在、其他应用的缓存保留。不会按引擎skip，也不吞掉导航异常。
+- 本环境Actions API读取返回Forbidden；本地没有macOS Simulator，WebKit下载此前被网络策略阻止。推送后应通过GitHub API核对新提交的四个job及本次xcresult附件；在证据齐全前继续阻止发布。

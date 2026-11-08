@@ -1,6 +1,13 @@
 import XCTest
 
 final class SafariTests: XCTestCase {
+    private func capture(_ name: String) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     func testNativeRecallKeyboardAndGrading() throws {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
@@ -24,9 +31,20 @@ final class SafariTests: XCTestCase {
             web.swipeUp()
         }
         XCTAssertTrue(commit.isHittable)
+        capture("Before first commit tap")
+        XCTAssertTrue(commit.isEnabled, "Native typing must enable commit before the first tap")
         commit.tap() // One tap must commit the answer, not merely dismiss the keyboard.
+        capture("Immediately after first commit tap")
         let skip = web.buttons["跳过分类 · 直接看示范与解析"].firstMatch
-        XCTAssertTrue(skip.waitForExistence(timeout: 10))
+        let advanced = skip.waitForExistence(timeout: 10)
+        capture("After waiting for strategy step")
+        if !advanced {
+            let hierarchy = XCTAttachment(string: safari.debugDescription)
+            hierarchy.name = "Safari hierarchy after first commit tap"
+            hierarchy.lifetime = .keepAlways
+            add(hierarchy)
+        }
+        XCTAssertTrue(advanced, "One enabled commit tap must advance to the strategy step")
         for _ in 0..<8 {
             if skip.isHittable { break }
             web.swipeUp()
@@ -40,9 +58,11 @@ final class SafariTests: XCTestCase {
         XCTAssertTrue(saved.waitForExistence(timeout: 10))
         let portrait = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         portrait.name = "Safari recall saved"; portrait.lifetime = .keepAlways; add(portrait)
+        XCTAssertFalse(safari.keyboards.firstMatch.exists, "Keyboard must be dismissed after grading")
         XCUIDevice.shared.orientation = .landscapeLeft
         XCTAssertTrue(web.buttons["确认原话 · 查看策略"].firstMatch.waitForExistence(timeout: 10))
         let landscape = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         landscape.name = "Safari landscape"; landscape.lifetime = .keepAlways; add(landscape)
+        XCTAssertFalse(safari.keyboards.firstMatch.exists, "Landscape screenshot must show the saved flow without a keyboard")
     }
 }

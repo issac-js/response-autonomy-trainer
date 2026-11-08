@@ -32,7 +32,21 @@ async function main(){
  await test('background sync defers adopting remote data during active recall',async()=>{const {c,p}=await fresh();await mockedSync(p);await p.evaluate(async()=>{save();await cloudBase(data,'fixture-user');const remote={revision:data.revision+1,payload:{...data,revision:data.revision+1,writes:{cloud:'云端新内容'}}};cloudPull=async()=>remote;start('single',['RA-001']);await cloudSync(false)});assert.equal(await p.locator('#reply').count(),1);assert.match(await p.evaluate('cloudFlash'),/保留当前练习/);await c.close()});
  await test('switching accounts never automatically uploads the previous account snapshot',async()=>{const {c,p}=await fresh();await mockedSync(p);await p.evaluate(async()=>{cloudMeta.owner='other-user';cloudPull=async()=>{throw Error('must not pull')};await cloudSync(true)});assert.match(await p.evaluate('cloudFlash'),/内容不同/);await c.close()});
  await test('expired input controls do not reactivate keyboard layout',async()=>{const {c,p}=await fresh();await p.click('[data-nav=settings]');await p.check('#timer');assert.equal(await p.evaluate("document.body.classList.contains('keyboard-open')"),false);await c.close()});
- await test('installed shell opens offline and keeps unrelated caches',async()=>{const {c,p}=await fresh({serviceWorkers:'allow'});await p.evaluate(async()=>{await navigator.serviceWorker.ready;await caches.open('unrelated-fixture-cache')});await p.reload();await p.waitForFunction('!!navigator.serviceWorker.controller');await c.setOffline(true);await p.goto(base+'index.html');assert.equal(await p.evaluate('APP_VERSION'),'0.9.0');assert.equal(await p.locator('#daily').count(),1);assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));await c.setOffline(false);await c.close()});
+ await test('installed shell opens offline and keeps unrelated caches',async()=>{
+  const {c,p}=await fresh({serviceWorkers:'allow'});
+  await p.evaluate(async()=>{await navigator.serviceWorker.ready;await caches.open('unrelated-fixture-cache')});
+  await p.reload();await p.waitForFunction('!!navigator.serviceWorker.controller');
+  await p.evaluate(()=>{window.beforeOfflineReload=true});
+  await c.setOffline(true);
+  // WebKit 26 can fail waiting for load on offline goto. Reload the controlled
+  // URL through the same SW navigation handler, then check the new document.
+  await p.reload({waitUntil:'commit'});
+  await p.waitForFunction(()=>typeof APP_VERSION!=='undefined'&&!!document.querySelector('#daily')&&window.beforeOfflineReload===undefined);
+  assert.equal(await p.evaluate('APP_VERSION'),'0.9.0');
+  assert.equal(await p.locator('#daily').count(),1);
+  assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));
+  await c.setOffline(false);await c.close();
+ });
  assert.deepEqual(result.errors,[]);assert.deepEqual(result.externalRequests,[]);
  console.log(JSON.stringify({passed:result.tests.length,engine:result.engine}));
  }finally{if(b)await b.close();await new Promise(r=>server.close(r));fs.writeFileSync(path.join(outDir,`readiness-${result.engine}.json`),JSON.stringify(result,null,2))}
