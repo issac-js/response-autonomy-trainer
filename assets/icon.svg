@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="回应自主权：对话中的一拍">
+  <defs>
+    <linearGradient id="bg" x1="0.05" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#1C1136"/>
+      <stop offset="0.55" stop-color="#37215E"/>
+      <stop offset="1" stop-color="#56379B"/>
+    </linearGradient>
+    <radialGradient id="cool" cx="0.22" cy="0.1" r="0.78">
+      <stop offset="0" stop-color="#C6ACFF" stop-opacity="0.26"/>
+      <stop offset="0.5" stop-color="#C6ACFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#C6ACFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="warm" cx="0.92" cy="0.95" r="0.5">
+      <stop offset="0" stop-color="#FFB27A" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#FFB27A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ink" cx="0.3" cy="0.15" r="0.95">
+      <stop offset="0" stop-color="#3A2370"/>
+      <stop offset="1" stop-color="#1F1238"/>
+    </radialGradient>
+    <filter id="drop" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0F0619" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="116" fill="url(#cool)"/>
+  <rect width="512" height="512" rx="116" fill="url(#warm)"/>
+  <rect x="2.5" y="2.5" width="507" height="507" rx="113.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.11" stroke-width="3"/>
+
+  <g filter="url(#drop)">
+    <rect x="112" y="104" width="288" height="198" rx="62" fill="#FFFFFF"/>
+    <path d="M150 268 C143 302 137 332 131 352 Q128 365 141 360 C172 346 198 324 216 294 Z" fill="#FFFFFF"/>
+  </g>
+
+  <rect x="209" y="150" width="30" height="100" rx="15" fill="url(#ink)"/>
+  <rect x="273" y="150" width="30" height="100" rx="15" fill="url(#ink)"/>
+</svg>

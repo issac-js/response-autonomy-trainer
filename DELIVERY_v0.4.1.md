@@ -109,3 +109,20 @@
 - 静态发布（L1）：`https://response-autonomy-trainer.app.workbuddy.host/?sharecode=O6CO6UZJWZ`。发布后在真实公网链接复测：HTTP 200、`isSecureContext=true`、`APP_VERSION=0.4.1`、`localStorage`/`sessionStorage` 可用、FSRS 刷新后保留、未保存文本可恢复、320px 无横向溢出、0 页面错误、0 外部请求。在线版数据仍只存在访问者各自浏览器，未接入云端存储。
 - 本地 Git 仓库：`Response_Autonomy_Trainer_v0.4/` 内已初始化 `main` 分支并完成初始提交；`PERSONAL_TRAINING_SPEC_v0.4.md` 由 `.gitignore` 排除，仓库内为通用版 `TRAINING_DESIGN.md`。CI 在全新克隆上等效验证通过：45/45 校验和、`core.cjs` 42/42、`rebuild.py` 重建与提交一致。
 - 尚未创建远程仓库、未推送；具体命令见交付回复。
+
+## 十、应用图标重设计
+
+原桌面快捷方式继承的是 Edge 为无 favicon 页面生成的占位图标（深灰底、白色线框字母 A），既无产品语义也无品牌色。本次重做：
+
+| 项目 | 内容 |
+| --- | --- |
+| 语义 | 「对话中的一拍」：白色对话气泡内的两条暂停竖条 |
+| 配色 | 底 `#1C1136 → #56379B`（冷光＋暖角），气泡纯白，竖条 `#3A2370 → #1F1238` |
+| 尺寸策略 | 16/20/24/32 用简化暂停标；40 及以上用完整气泡版 |
+| 产物 | `assets/icon.svg`、`assets/icon-compact.svg`、`assets/icon.ico`（10 帧 16–256）、`assets/icon-*.png` |
+| 内联 | `rebuild.py` 将 32/64 图标以 data URI 写入单文件并加 `theme-color`，离线仍显示正确 favicon |
+| 应用范围 | 已替换 Edge 的 PWA 图标缓存并刷新系统图标缓存；**在线站点尚未重新发布**，需另行确认 |
+
+原始图标已备份在交付目录之外：`../.icon-backup/`。如需回退，把该目录中的 `.ico` 与 `.ico.md5` 复制回 Edge 的 `Web Applications\_crx__olieoimhinnbladoagojjgfleebnkkad\` 并刷新图标缓存。
+
+重建设计：修改 `assets/*.svg` 后运行 `node tools/render-icon.cjs`（需 Playwright），再 `python rebuild.py`。
