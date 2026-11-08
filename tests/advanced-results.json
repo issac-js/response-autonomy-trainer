@@ -9,6 +9,8 @@
     "AI blocks render with colours and bold, and escape HTML",
     "generated cards are validated before use",
     "a generated card completes into the challenge panel",
+    "model chain prefers DeepSeek then Hy4 then GLM and skips exhausted",
+    "the model answer is emphasised with the purple style",
     "no page errors in the advanced runs"
   ],
   "errors": [],

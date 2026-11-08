@@ -1,5 +1,5 @@
 {
-  "baselinePath": "D:\\迅雷下载\\沟通决策训练系统\\baseline-v0.4.0\\index.html",
+  "baselinePath": "D://迅雷下载//沟通决策训练系统//baseline-v0.4.0//index.html",
   "checks": [
     "current build export contains FSRS, due, history, writes, dialogue and both coach record types",
     "rollback to v0.4.0: every payload byte-equal after import",

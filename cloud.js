@@ -287,10 +287,17 @@ function parseJsonBlock(text){
  if(a<0||b<=a)return null;
  try{const o=JSON.parse(raw.slice(a,b+1));return o&&typeof o==='object'?o:null}catch(e){return null}
 }
-function pickModel(models){
- const score=m=>{const s=((m.id||'')+' '+(m.name||'')).toLowerCase();let v=0;if(s.includes('deepseek'))v+=4;if(s.includes('v4.1')||s.includes('v4_1'))v+=2;if(s.includes('flash'))v+=2;return v};
- return [...models].sort((a,b)=>score(b)-score(a))[0];
+const MODEL_CHAIN=['deepseek-v4.1-flash','hy4std','hy4free','hy4-preview-x','glm-5.3-flash'];
+const exhaustedModels=new Set();
+function modelChain(models){
+ const byId=new Map(models.map(m=>[m.id,m]));
+ const out=[];
+ for(const id of MODEL_CHAIN){const m=byId.get(id);if(m&&!out.includes(m))out.push(m)}
+ const score=m=>{const s=((m.id||'')+' '+(m.name||'')).toLowerCase();let v=0;if(s.includes('deepseek'))v+=3;if(s.includes('flash'))v+=1;return v};
+ for(const m of [...models].sort((a,b)=>score(b)-score(a)))if(!out.includes(m))out.push(m);
+ return out.filter(m=>!exhaustedModels.has(m.id));
 }
+function retryable(e){const code=e&&e.error&&e.error.code?String(e.error.code):'';return /^quota_|^gateway_|^model_|^internal_/.test(code)}
 async function collect(cloud,model,messages,temperature){
  let out='';
  for await (const chunk of cloud.llm.chat.completions.create({model:model.id,messages,stream:true,temperature,stream_options:{include_usage:true}})){
@@ -298,6 +305,21 @@ async function collect(cloud,model,messages,temperature){
   if(d&&d.content)out+=d.content;
  }
  return out.trim();
+}
+async function collectWithFallback(cloud,models,messages,temperature){
+ let last=null;
+ for(const model of models){
+  try{
+   const text=await collect(cloud,model,messages,temperature);
+   if(text)return {text,model:model.name||model.id};
+  }catch(e){
+   last=e;
+   if(retryable(e)){exhaustedModels.add(model.id);continue}
+   throw e;
+  }
+ }
+ if(last&&!/^quota_|^gateway_|^model_|^internal_/.test(String(last&&last.error&&last.error.code||'')))throw last;
+ throw Error('可用模型都暂时不可用，请稍后再试。');
 }
 async function aiAnalyze(card,text){
  const answer=String(text||'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,1200);
@@ -307,17 +329,16 @@ async function aiAnalyze(card,text){
  const key=card.id+'|'+answer;
  if(aiCache.has(key))return aiCache.get(key);
  const c=await loadCloudSdk();
- const models=(await c.llm.models.list()||[]).filter(m=>m&&m.disabled!==true);
+ const models=modelChain((await c.llm.models.list()||[]).filter(m=>m&&m.disabled!==true));
  if(!models.length)throw Error('当前没有可用模型');
- const model=pickModel(models);
  const user='情境：'+card.scene+'\n对方说：'+card.question+'\n我的原话：'+answer;
  aiLast=now;
- const out=await collect(c,model,[{role:'system',content:AI_SYSTEM},{role:'user',content:user}],0.4);
- if(!out)throw new Error('模型没有返回内容');
+ const got=await collectWithFallback(c,models,[{role:'system',content:AI_SYSTEM},{role:'user',content:user}],0.4);
+ const out=got.text;
  const o=parseJsonBlock(out);
  let result;
  if(o&&['fact','boundary','length','rewrite'].every(k=>typeof o[k]==='string'&&o[k].trim())){
-  result={fact:o.fact.trim().slice(0,500),boundary:o.boundary.trim().slice(0,500),length:o.length.trim().slice(0,500),rewrite:o.rewrite.trim().slice(0,500),tip:typeof o.tip==='string'?o.tip.trim().slice(0,500):''};
+  result={fact:o.fact.trim().slice(0,500),boundary:o.boundary.trim().slice(0,500),length:o.length.trim().slice(0,500),rewrite:o.rewrite.trim().slice(0,500),tip:typeof o.tip==='string'?o.tip.trim().slice(0,500):'',model:got.model};
  }else{
   result={plain:out};
  }
@@ -338,12 +359,11 @@ async function aiGenerateCase(level){
  const now=Date.now();
  if(now-genLast<10000)throw Error('出题太快了，等十秒再来一题。');
  const c=await loadCloudSdk();
- const models=(await c.llm.models.list()||[]).filter(m=>m&&m.disabled!==true);
+ const models=modelChain((await c.llm.models.list()||[]).filter(m=>m&&m.disabled!==true));
  if(!models.length)throw Error('当前没有可用模型');
- const model=pickModel(models);
  genLast=now;
- const out=await collect(c,model,[{role:'system',content:GEN_SYSTEM},{role:'user',content:'难度：'+level+'。请出题。'}],0.8);
- const o=validateGenerated(parseJsonBlock(out));
+ const got=await collectWithFallback(c,models,[{role:'system',content:GEN_SYSTEM},{role:'user',content:'难度：'+level+'。请出题。'}],0.8);
+ const o=validateGenerated(parseJsonBlock(got.text));
  if(!o)throw Error('生成的题目不完整，请再试一次。');
  genSeq=(genSeq%99)+1;
  return {id:'RA-9'+String(genSeq).padStart(2,'0'),group:'随机挑战',signal:mechanismByKey(o.mechanism).label,generated:true,level,...o};

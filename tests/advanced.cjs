@@ -117,6 +117,25 @@ async function main(){
   await c.close();
  });
 
+ await test('model chain prefers DeepSeek then Hy4 then GLM and skips exhausted',async()=>{
+  const {c,p}=await fresh();
+  const order=await p.evaluate(()=>modelChain([{id:'glm-5.3-flash',name:'GLM-5.3-Flash'},{id:'hy4std',name:'Hy4'},{id:'deepseek-v4.1-flash',name:'DeepSeek-V4.1-Flash'}]).map(m=>m.id));
+  assert.deepEqual(order,['deepseek-v4.1-flash','hy4std','glm-5.3-flash']);
+  const skipped=await p.evaluate(()=>{exhaustedModels.add('deepseek-v4.1-flash');const r=modelChain([{id:'deepseek-v4.1-flash',name:'D'},{id:'hy4std',name:'Hy4'}]).map(m=>m.id);exhaustedModels.delete('deepseek-v4.1-flash');return r});
+  assert.deepEqual(skipped,['hy4std']);
+  await c.close();
+ });
+
+ await test('the model answer is emphasised with the purple style',async()=>{
+  const {c,p}=await fresh();
+  await p.evaluate("start('single',['RA-054'])");await p.fill('#reply','合成');await p.click('#commitSingle');await p.click('[data-choice=skip]');
+  assert.equal(await p.locator('.model-quote').count(),1);
+  const st=await p.evaluate(()=>{const e=document.querySelector('.model-quote');const s=getComputedStyle(e);return {weight:s.fontWeight,color:s.color}});
+  assert.equal(st.weight,'700');
+  assert.match(st.color,/106, 70, 184|211, 170, 255/);
+  await c.close();
+ });
+
  await test('no page errors in the advanced runs',async()=>{assert.deepEqual(result.errors,[])});
 
  await b.close();

@@ -20,7 +20,7 @@ async function main(){
  result.device=p.viewportSize();
 
  await test('live build exposes the v0.7 controls on an iPhone viewport',async()=>{
-  assert.match(await p.title(),/v0\.8\.0/);
+  assert.match(await p.title(),/v0\.8\.1/);
   await p.evaluate("start('single',['RA-054'])");await p.fill('#reply','合成原话');await p.click('#commitSingle');
   assert.equal(await p.locator('[data-choice=skip]').count(),1);
   await p.click('[data-choice=skip]');
