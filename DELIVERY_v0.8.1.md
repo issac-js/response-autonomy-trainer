@@ -6,7 +6,7 @@
 
 固定顺序：
 
-```
+```text
 deepseek-v4.1-flash → hy4std → hy4free → hy4-preview-x → glm-5.3-flash
 ```
 
