@@ -21,7 +21,7 @@ PASS replacement keeps exact before-import snapshot
 PASS quota failure rolls back memory and keeps recoverable pending content
 PASS import quota failure preserves active data and storage
 PASS stale tab cannot overwrite a newer record
-PASS banks retain exact v0.2 content and stable identities
+PASS banks keep the v0.2 content byte-identical and add the advanced packs
 PASS all authored dialogue paths terminate in three turns, no missing nodes or cycles
 PASS v0.3 migration adds only empty coach state, retaining all old payloads
 PASS coach invalid import 1 leaves current bytes unchanged
@@ -40,4 +40,4 @@ PASS all 14 self-paced units have valid trigger and scenario, six authored scena
 PASS persisted simulation draft round-trips without creating a completed run or reality evidence
 PASS real plans and observations preserve original prediction even with discomfort increasing
 PASS old v0.3 refuses schema 3 writes rather than discarding personal practice
-{"passed":42,"dialoguePaths":216}
+{"passed":42,"dialoguePaths":270}

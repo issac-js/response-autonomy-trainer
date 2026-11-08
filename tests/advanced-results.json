@@ -1,0 +1,12 @@
+{
+  "tests": [
+    "advanced pack is present with one mechanism each",
+    "classification can be skipped and still shows the rationale",
+    "mechanism question marks a correct recognition",
+    "a wrong mechanism reveals the real one without blocking the rating",
+    "classic cards have no mechanism block but still offer the AI entry",
+    "no page errors in the advanced runs"
+  ],
+  "errors": [],
+  "externalRequests": []
+}

@@ -1,7 +1,7 @@
 
 'use strict';
 const CARDS=JSON.parse(document.getElementById('bank').textContent), byId=Object.fromEntries(CARDS.map(x=>[x.id,x]));
-const root=document.getElementById('root');let page='home', session=[], current=null, picked=null, phase='pick', textDraft='', source='daily', timerHandle=null, remaining=15, timerExpired=false, selfDraft={};
+const root=document.getElementById('root');let page='home', session=[], current=null, picked=null, phase='pick', textDraft='', source='daily', timerHandle=null, remaining=15, timerExpired=false, selfDraft={}, mechGuess=null, aiText='', aiBusy=false;
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state=id=>data.cards[id]||{};let today=TODAY();let viewOptions=[];
 const startedToday=()=>Object.values(data.cards).filter(x=>x.first===today).length;

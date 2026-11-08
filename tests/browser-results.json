@@ -9,7 +9,7 @@
     "local corruption shows recovery page without resetting existing bytes",
     "stale page cannot overwrite newer storage; pending content is exportable",
     "all 24 representative three-turn dialogue paths run through actual controls",
-    "all 216 authored dialogue paths save complete histories without truncation",
+    "all authored dialogue paths save complete histories without truncation",
     "local recording creates playable audio and releases microphone on navigation",
     "denied microphone permission falls back to text without losing draft",
     "320, 390, 1440 layouts: all pages and single/dialogue phases have no horizontal overflow",

@@ -1,4 +1,4 @@
-const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict'),path=require('node:path');
+const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict'),path=require('node:path'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..');let passed=0;
 function env(raw=null){const values=new Map(raw===null?[]:[['response-autonomy-v01',raw]]);let quota=false;const ctx=vm.createContext({console,Date,JSON,Map,Math,alert:()=>{},localStorage:{getItem:k=>values.has(k)?values.get(k):null,setItem:(k,v)=>{if(quota)throw Error('quota');values.set(k,v)}}});vm.runInContext(fs.readFileSync(path.join(root,'vendor/ts-fsrs-5.4.2.umd.js'),'utf8'),ctx);vm.runInContext(fs.readFileSync(path.join(root,'coach-data.js'),'utf8'),ctx);vm.runInContext(fs.readFileSync(path.join(root,'data.js'),'utf8'),ctx);return {run:s=>vm.runInContext(s,ctx),values,fail:()=>quota=true};}
 function test(n,f){f();passed++;console.log('PASS '+n)}
@@ -17,7 +17,16 @@ test('quota failure rolls back memory and keeps recoverable pending content',()=
 test('import quota failure preserves active data and storage',()=>{const raw=JSON.stringify(legacy),e=env(raw);e.fail();assert.throws(()=>e.run('restoreBackup(defaultData())'));assert.equal(e.values.get('response-autonomy-v01'),raw);assert.equal(e.run('data.history.length'),1)});
 test('stale tab cannot overwrite a newer record',()=>{const raw=JSON.stringify(legacy),e=env(raw);e.values.set('response-autonomy-v01',JSON.stringify({...legacy,revision:4}));assert.equal(e.run('save()'),false);assert.equal(JSON.parse(e.values.get('response-autonomy-v01')).revision,4);assert.throws(()=>e.run('restoreBackup(defaultData())'))});
 const cards=JSON.parse(fs.readFileSync(path.join(root,'cards.json'))),dialogues=JSON.parse(fs.readFileSync(path.join(root,'dialogues.json')));
-test('banks retain exact v0.2 content and stable identities',()=>{assert.equal(cards.length,53);assert.equal(new Set(cards.map(x=>x.id)).size,53);assert.equal(dialogues.length,8);for(const c of cards){assert.ok(c.correct>=0&&c.correct<c.options.length);for(const k of ['scene','question','rationale','model','principle'])assert.ok(c[k])}});
+const sha=x=>crypto.createHash('sha256').update(JSON.stringify(x)).digest('hex');
+test('banks keep the v0.2 content byte-identical and add the advanced packs',()=>{
+ assert.equal(cards.length,73);assert.equal(new Set(cards.map(x=>x.id)).size,73);
+ assert.equal(dialogues.length,10);assert.equal(new Set(dialogues.map(x=>x.id)).size,10);
+ assert.equal(sha(cards.slice(0,53)),'3ba1f30f1738a354f2360a0290dcb0a17da7dd21fa117f86b0b3a49a19156348');
+ assert.equal(sha(dialogues.slice(0,8)),'db642182436258e3836d42a6f32f033ab02bfab742ed1c59cdc7ee943dd22697');
+ const adv=cards.filter(c=>c.level==='advanced');assert.equal(adv.length,20);
+ for(const c of cards){assert.ok(c.correct>=0&&c.correct<c.options.length);for(const k of ['scene','question','rationale','model','principle'])assert.ok(c[k])}
+ for(const c of adv){assert.ok(c.mechanism&&c.mechanismWhy,'advanced card needs a mechanism');assert.ok(/^RA-0(5[4-9]|6\d|7[0-3])$/.test(c.id))}
+});
 let paths=0;
 test('all authored dialogue paths terminate in three turns, no missing nodes or cycles',()=>{for(const sc of dialogues){function visit(id,seen=[]){assert.ok(sc.nodes[id]);assert.ok(!seen.includes(id));const n=sc.nodes[id];for(const o of n.options){assert.ok([0,1,2].includes(o.score));if(o.next)visit(o.next,[...seen,id]);else{assert.equal(seen.length+1,3);paths++}}}visit(sc.start)}assert.ok(paths>=24)});
 
