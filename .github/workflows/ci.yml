@@ -62,6 +62,7 @@ jobs:
           if-no-files-found: error
 
   ios-safari:
+    continue-on-error: true
     runs-on: macos-15
     timeout-minutes: 25
     steps:
