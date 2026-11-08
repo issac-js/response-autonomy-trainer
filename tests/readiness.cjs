@@ -8,6 +8,11 @@ async function main(){
  fs.mkdirSync(outDir,{recursive:true});
  const server=http.createServer((req,res)=>{const name=new URL(req.url,'http://local').pathname.slice(1)||'index.html';if(!allowed.has(name)){res.writeHead(404);res.end();return}const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.webmanifest':'application/manifest+json','.png':'image/png'};res.writeHead(200,{'content-type':types[path.extname(name)],'cache-control':'no-store'});res.end(fs.readFileSync(path.join(root,name)))});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}/`;
+ async function stopServer(){
+  if(!server.listening)return;
+  server.closeAllConnections?.();
+  await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));
+ }
  let b;
  try{
  b=await pw[result.engine].launch({headless:true});
@@ -37,18 +42,19 @@ async function main(){
   await p.evaluate(async()=>{await navigator.serviceWorker.ready;await caches.open('unrelated-fixture-cache')});
   await p.reload();await p.waitForFunction('!!navigator.serviceWorker.controller');
   await p.evaluate(()=>{window.beforeOfflineReload=true});
-  await c.setOffline(true);
-  // WebKit 26 can fail waiting for load on offline goto. Reload the controlled
-  // URL through the same SW navigation handler, then check the new document.
+  // This is the final test: remove the actual HTTP listener and keep-alive
+  // connections instead of WebKit's failing context.setOffline simulation.
+  await stopServer();
+  assert.equal(server.listening,false);
   await p.reload({waitUntil:'commit'});
   await p.waitForFunction(()=>typeof APP_VERSION!=='undefined'&&!!document.querySelector('#daily')&&window.beforeOfflineReload===undefined);
   assert.equal(await p.evaluate('APP_VERSION'),'0.9.0');
   assert.equal(await p.locator('#daily').count(),1);
   assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));
-  await c.setOffline(false);await c.close();
+  await c.close();
  });
  assert.deepEqual(result.errors,[]);assert.deepEqual(result.externalRequests,[]);
  console.log(JSON.stringify({passed:result.tests.length,engine:result.engine}));
- }finally{if(b)await b.close();await new Promise(r=>server.close(r));fs.writeFileSync(path.join(outDir,`readiness-${result.engine}.json`),JSON.stringify(result,null,2))}
+ }finally{if(b)await b.close();await stopServer();fs.writeFileSync(path.join(outDir,`readiness-${result.engine}.json`),JSON.stringify(result,null,2))}
 }
 main().catch(e=>{console.error(e);process.exitCode=1});

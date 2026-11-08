@@ -8,6 +8,18 @@ final class SafariTests: XCTestCase {
         add(attachment)
     }
 
+    private func logStep(_ name: String, safari: XCUIApplication, web: XCUIElement) {
+        print("SAFARI_STEP_BEGIN: \(name)")
+        print("KEYBOARD_EXISTS: \(safari.keyboards.firstMatch.exists)")
+        print("WEB_BUTTON_LABELS: \(web.buttons.allElementsBoundByIndex.map(\.label))")
+        let headings = web.staticTexts.matching(NSPredicate(
+            format: "label BEGINSWITH %@ OR label BEGINSWITH %@ OR label BEGINSWITH %@",
+            "第一步 ·", "第二步 ·", "第三步 ·"
+        ))
+        print("STEP_H2_ACCESSIBILITY_LABELS: \(headings.allElementsBoundByIndex.map(\.label))")
+        print("SAFARI_STEP_END: \(name)")
+    }
+
     func testNativeRecallKeyboardAndGrading() throws {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
@@ -32,17 +44,19 @@ final class SafariTests: XCTestCase {
         }
         XCTAssertTrue(commit.isHittable)
         capture("Before first commit tap")
+        logStep("before first commit tap", safari: safari, web: web)
         XCTAssertTrue(commit.isEnabled, "Native typing must enable commit before the first tap")
         commit.tap() // One tap must commit the answer, not merely dismiss the keyboard.
         capture("Immediately after first commit tap")
+        logStep("immediately after first commit tap", safari: safari, web: web)
         let skip = web.buttons["跳过分类 · 直接看示范与解析"].firstMatch
         let advanced = skip.waitForExistence(timeout: 10)
         capture("After waiting for strategy step")
+        logStep("after waiting for strategy step", safari: safari, web: web)
         if !advanced {
-            let hierarchy = XCTAttachment(string: safari.debugDescription)
-            hierarchy.name = "Safari hierarchy after first commit tap"
-            hierarchy.lifetime = .keepAlways
-            add(hierarchy)
+            print("SAFARI_HIERARCHY_BEGIN")
+            print(safari.debugDescription)
+            print("SAFARI_HIERARCHY_END")
         }
         XCTAssertTrue(advanced, "One enabled commit tap must advance to the strategy step")
         for _ in 0..<8 {

@@ -53,3 +53,11 @@
 - **Safari首次提交**：先验证确认按钮的 `isEnabled`，再只点击一次。点击前、点击后、等待策略步骤后均保留截图；若未找到策略按钮，另保留Safari辅助功能层级。按钮灰掉/点击未推进/新步骤已出现但不在辅助功能树，是不同诊断结果，必须结合本次Simulator产物区分后再决定是否修改产品代码。完整流程的竖屏、横屏截图继续保存，并断言评分后键盘已消失。不通过第二次点击、额外键盘关闭或合成input事件掩盖问题。
 - **WebKit离线导航限制**：根据用户提供的run #3，Playwright WebKit 26.0（v2248）在 `setOffline(true)` 后 `goto` 等待load时报内部错误；这里记录为已知测试器兼容性现象，未在本机独立复现或证明引擎根因。替代验证统一对所有引擎执行 `reload({waitUntil:'commit'})`，走同一受控URL的Service Worker导航处理，再等待新文档中的应用初始化。重载前标记必须消失，以免旧页面冒充离线重开成功。原断言全部保留：APP_VERSION为0.9.0、daily入口存在、其他应用的缓存保留。不会按引擎skip，也不吞掉导航异常。
 - 本环境Actions API读取返回Forbidden；本地没有macOS Simulator，WebKit下载此前被网络策略阻止。推送后应通过GitHub API核对新提交的四个job及本次xcresult附件；在证据齐全前继续阻止发布。
+
+## run #4 结果与下一轮证据采集
+
+用户通过API复核 `0756a03`：core与Chromium通过，WebKit与ios-safari仍失败；尚未达到四个job全绿的发布门槛。
+
+- Safari的 `isEnabled` 断言已通过，排除按钮disabled这一候选原因；单次点击后仍未找到策略按钮。是否只收起键盘、或步骤已推进但未进入辅助功能树，尚无决定性证据。本轮保持产品代码不变，把失败层级从文本附件改为直接 `print(safari.debugDescription)`，并在点击前、点击后、等待后输出键盘状态、全部Web按钮标签、步骤h2对应的辅助功能文本。截图及一次点击约束继续保留，无需下载大体积xcresult即可先读日志诊断。
+- WebKit在 `setOffline(true)` 下使用reload仍报内部错误，上一轮仅换导航API的办法未解决问题。本轮不再使用 `setOffline`：最后一条用例先关闭本地HTTP服务器的keep-alive连接和监听端口，确认服务已关闭，再重载受SW控制的页面，让真实连接失败触发缓存回退。所有引擎执行相同步骤；原有版本、daily入口、无关缓存断言和新文档标记检查全部保留，无skip、无吞错。服务器清理可重复调用，避免finally二次关闭挂起。
+- 本地Chromium结果只能验证这条替代断网路径，不代表WebKit或Simulator已通过。需按新提交SHA复核四个job；在收到新的Safari日志前，不根据猜测修改触摸或焦点逻辑，不打包、不部署。
