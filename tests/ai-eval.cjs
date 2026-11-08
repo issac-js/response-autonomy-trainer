@@ -29,15 +29,16 @@ async function main(){
 
  for(const item of CASES){
   const started=Date.now();
-  let text='',thrown='';
+  let text='',raw=null,thrown='';
   try{
-   text=await p.evaluate(async ({id,answer})=>{
+   raw=await p.evaluate(async ({id,answer})=>{
     aiLast=0; // eval paces itself instead of the UI cooldown
     return await aiAnalyze(CARDS.find(c=>c.id===id),answer);
    },{id:item.id,answer:item.answer});
+   text=raw&&raw.plain?raw.plain:['fact','boundary','length','rewrite','tip'].map(k=>raw&&raw[k]||'').join('\n');
   }catch(e){thrown=e.message}
   const ms=Date.now()-started;
-  const checks={has4:/事实/.test(text)&&/前提/.test(text)&&/篇幅|停顿/.test(text)&&/替换/.test(text),
+  const checks={structured:!!(raw&&raw.fact&&raw.boundary&&raw.length&&raw.rewrite),has4:/事实/.test(text)&&/前提/.test(text)&&/篇幅|停顿/.test(text)&&/替换/.test(text),
    length:text.length>=80&&text.length<=320,
    noScore:!/\d+\s*%|得分|评分：|正确率/.test(text),
    noDiagnosis:!/诊断|人格障碍|你有.*倾向/.test(text),

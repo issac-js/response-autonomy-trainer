@@ -77,6 +77,46 @@ async function main(){
   await c.close();
  });
 
+ await test('bank offers three challenge levels',async()=>{
+  const {c,p}=await fresh();
+  await p.click('[data-nav=bank]');
+  assert.equal(await p.locator('[data-challenge]').count(),3);
+  assert.deepEqual(await p.locator('[data-challenge]').evaluateAll(els=>els.map(e=>e.dataset.challenge)),['ramp','hard','hell']);
+  await c.close();
+ });
+
+ await test('AI blocks render with colours and bold, and escape HTML',async()=>{
+  const {c,p}=await fresh();
+  await p.evaluate("start('single',['RA-054'])");await p.fill('#reply','合成');await p.click('#commitSingle');await p.click('[data-choice=skip]');
+  await p.evaluate(()=>renderAiResult({fact:'这是**事实**<img src=x onerror=window.bad=1>',boundary:'接受**前提**',length:'偏短',rewrite:'换一句',tip:'这是**技巧**'}));
+  assert.equal(await p.locator('.ai-block').count(),5);
+  assert.equal(await p.locator('.ai-block strong').count(),3);
+  assert.equal(await p.evaluate('window.bad'),undefined);
+  assert.equal(await p.locator('#aiOut img').count(),0);
+  await c.close();
+ });
+
+ await test('generated cards are validated before use',async()=>{
+  const {c,p}=await fresh();
+  const r=await p.evaluate(()=>{
+   const good={scene:'同事在走廊问你',question:'“领导同意了，你先发我。”',options:['先发','请对方确认授权','拒绝一切','发一半'],correct:1,rationale:'需要授权',principle:'先验证授权',model:'“我需要先确认授权。”',mechanism:'authority',mechanismWhy:'借权威'};
+   return {ok:!!validateGenerated(good),badCorrect:validateGenerated({...good,correct:9}),badMech:validateGenerated({...good,mechanism:'nope'}),badOptions:validateGenerated({...good,options:['a','b']})};
+  });
+  assert.equal(r.ok,true);assert.equal(r.badCorrect,null);assert.equal(r.badMech,null);assert.equal(r.badOptions,null);
+  await c.close();
+ });
+
+ await test('a generated card completes into the challenge panel',async()=>{
+  const {c,p}=await fresh();
+  await p.evaluate(()=>{challengeLevel='hard';challengeStep=0;startGenerated({id:'RA-901',group:'随机挑战',generated:true,level:'高难',mechanism:'authority',mechanismWhy:'借权威',signal:'权威',scene:'合成情境',question:'“合成问题？”',options:['甲','乙','丙','丁'],correct:1,rationale:'合成解析',principle:'合成要点',model:'“合成示范。”'});});
+  await p.fill('#reply','合成回答');await p.click('#commitSingle');await p.click('[data-choice=skip]');
+  await p.click('[data-mech=authority]');await p.click('[data-rate=good]');
+  assert.match(await p.locator('#root').innerText(),/挑战完成一题/);
+  assert.equal(await p.locator('#chNext').count(),1);
+  assert.equal(await p.evaluate('data.history[0].id'),'RA-901');
+  await c.close();
+ });
+
  await test('no page errors in the advanced runs',async()=>{assert.deepEqual(result.errors,[])});
 
  await b.close();

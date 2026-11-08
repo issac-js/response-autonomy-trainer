@@ -5,6 +5,10 @@
     "mechanism question marks a correct recognition",
     "a wrong mechanism reveals the real one without blocking the rating",
     "classic cards have no mechanism block but still offer the AI entry",
+    "bank offers three challenge levels",
+    "AI blocks render with colours and bold, and escape HTML",
+    "generated cards are validated before use",
+    "a generated card completes into the challenge panel",
     "no page errors in the advanced runs"
   ],
   "errors": [],

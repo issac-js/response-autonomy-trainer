@@ -8,7 +8,7 @@ function advance(){
  if(data.settings.timer)timerHandle=setInterval(()=>{remaining--;const el=document.getElementById('time');if(el)el.textContent=remaining>0?remaining+'秒':'可以慢慢想，不扣分';if(remaining<=0)clearTimer()},1000);
 }
 function renderPlay(){
- if(!current){root.innerHTML=`<section class="panel"><h2>本轮完成</h2><p>已保存本轮练习。留意自己原话中做得好的地方，下次只改一个具体点。</p><button class="primary" onclick="appBack()">返回今日训练</button></section>`;return}
+ if(!current){if(challengeLevel){renderChallengeDone();return}root.innerHTML=`<section class="panel"><h2>本轮完成</h2><p>已保存本轮练习。留意自己原话中做得好的地方，下次只改一个具体点。</p><button class="primary" onclick="appBack()">返回今日训练</button></section>`;return}
  const c=current;
  let body='';
  if(phase==='own')body=`<h2>第一步 · 先自己回应</h2><p class="small muted">用自己的话写1–3句；有意沉默时可写“（停顿，暂不回应）”。先判断事实、责任和相关性。</p>${data.settings.timer?`<p id="time">${remaining}秒</p>`:''}<label for="reply">我当场会说的话</label><textarea id="reply"${unsavedAttrs('single',c.id,'','reply')} maxlength="1500" placeholder="先试着说一句，暂不显示示范或选项。">${safe(textDraft)}</textarea><div id="voice-slot"></div><div class="actions"><button id="commitSingle" class="primary" disabled>确认原话 · 查看策略</button></div>`;
@@ -41,13 +41,20 @@ function renderPlay(){
   if(aiBtn)aiBtn.onclick=async()=>{
    const out=document.getElementById('aiOut');if(aiBusy)return;
    aiBusy=true;aiBtn.disabled=true;out.textContent='正在分析…';
-   try{aiText=await aiAnalyze(c,textDraft);out.innerHTML=safe(aiText).replace(/\n/g,'<br>')}
+   try{aiText=await aiAnalyze(c,textDraft);renderAiResult(aiText)}
    catch(e){out.textContent=aiErrorMessage(e)}
    finally{aiBusy=false;aiBtn.disabled=false}
   };
   root.querySelectorAll('[data-self]').forEach(b=>b.onclick=()=>{const [k,v]=b.dataset.self.split(':');selfDraft[k]=selfDraft[k]===v?null:v;root.querySelectorAll('[data-self^="'+k+':"]').forEach(x=>{const on=x.dataset.self.split(':')[1]===selfDraft[k];x.classList.toggle('on',on);x.setAttribute('aria-pressed',on?'true':'false')})});
   root.querySelectorAll('[data-rate]').forEach(b=>b.onclick=()=>rate(b.dataset.rate));
  }
+}
+function mdBold(s){return safe(String(s||'')).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}
+function renderAiResult(out){
+ const box=document.getElementById('aiOut');if(!box)return;
+ if(!out||out.plain){box.innerHTML=safe((out&&out.plain)||'').replace(/\n/g,'<br>');return}
+ const row=(k,label,cls)=>out[k]?`<div class="ai-block ${cls}"><b>${label}</b><p>${mdBold(out[k])}</p></div>`:'';
+ box.innerHTML=row('fact','事实','fact')+row('boundary','前提与边界','boundary')+row('length','篇幅与停顿','length')+row('rewrite','可替换说法','rewrite')+(out.tip?`<div class="ai-block tip"><b>技巧</b><p>${mdBold(out.tip)}</p></div>`:'');
 }
 function formatDue(d,now=new Date()){
  const minutes=Math.max(1,Math.round((new Date(d)-now)/60000));
