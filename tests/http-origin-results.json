@@ -1,0 +1,13 @@
+{
+  "tests": [
+    "http origin serves the self-contained app with both storages available",
+    "recall, FSRS and the daily counter persist across an http reload",
+    "coach simulation, real plan and observation survive an http reload",
+    "unsaved form protection works under http (sessionStorage per origin)",
+    "export and import round-trip under http",
+    "320px layout has no horizontal overflow under http",
+    "no page errors and no external requests from the http build"
+  ],
+  "errors": [],
+  "externalRequests": []
+}

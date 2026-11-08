@@ -54,6 +54,7 @@
 | 浏览器回归（新增） | `node tests/regression-browser.cjs` | 14/14，含完整使用流程与失败路径 | `tests/regression-browser-results.json` |
 | 跨引擎兼容性（新增） | `node tests/compat.cjs` | 4 引擎 × 10 项全部 pass，`notPassed:[]` | `tests/compat-results.json` |
 | 迁移/回滚（新增） | `node tests/rollback.cjs` | 5/5 | `tests/rollback-results.json` |
+| HTTP 源（新增） | `node tests/http-origin.cjs` | 7/7 | `tests/http-origin-results.json` |
 
 四个引擎：Playwright 自带 Chromium、系统 Edge、系统 Chrome、Playwright Windows WebKit。每项为加载、单轮主动回忆与 FSRS、三轮模拟、真实计划、刷新保留、未保存表单保护、v0.3 备份导入、320px 无横向溢出、无外部请求、无页面脚本错误。
 
@@ -101,4 +102,10 @@
 - 本文件：变更说明、实测结果、未通过项、迁移/回滚方法。
 - `README.md`：使用与边界说明；`AUDIT_AND_QA_v0.4.md` 保持基线原文，未改写历史结论或数字，仅为 markdownlint 合规补了 2 处列表前空行。
 - `TRAINING_DESIGN.md`：面向版本库的通用设计说明；本地个人化版本 `PERSONAL_TRAINING_SPEC_v0.4.md` 已由 `.gitignore` 排除，不进入仓库。
-- `.markdownlint-cli2.jsonc`：中文文档校验配置（关闭 MD013 / MD034 / MD060）。5 份 `.md` 已通过 `lint_md.py` 与 `markdownlint-cli2` 双校验，两者均 0 issue。
+- `.markdownlint-cli2.jsonc`：中文文档校验配置（关闭 MD013 / MD034 / MD060）。6 份 `.md` 已通过 `lint_md.py` 与 `markdownlint-cli2` 双校验，两者均 0 issue。
+
+## 九、在线版本与仓库
+
+- 静态发布（L1）：`https://response-autonomy-trainer.app.workbuddy.host/?sharecode=O6CO6UZJWZ`。发布后在真实公网链接复测：HTTP 200、`isSecureContext=true`、`APP_VERSION=0.4.1`、`localStorage`/`sessionStorage` 可用、FSRS 刷新后保留、未保存文本可恢复、320px 无横向溢出、0 页面错误、0 外部请求。在线版数据仍只存在访问者各自浏览器，未接入云端存储。
+- 本地 Git 仓库：`Response_Autonomy_Trainer_v0.4/` 内已初始化 `main` 分支并完成初始提交；`PERSONAL_TRAINING_SPEC_v0.4.md` 由 `.gitignore` 排除，仓库内为通用版 `TRAINING_DESIGN.md`。CI 在全新克隆上等效验证通过：45/45 校验和、`core.cjs` 42/42、`rebuild.py` 重建与提交一致。
+- 尚未创建远程仓库、未推送；具体命令见交付回复。
