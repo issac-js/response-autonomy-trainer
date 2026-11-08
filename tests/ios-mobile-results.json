@@ -1,0 +1,37 @@
+{
+  "engine": "webkit (device emulation, not real iOS)",
+  "devices": {
+    "iPhone 13": {
+      "viewport": {
+        "width": 390,
+        "height": 664
+      },
+      "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1"
+    },
+    "iPhone SE": {
+      "viewport": {
+        "width": 320,
+        "height": 568
+      }
+    },
+    "iPhone 14 Pro Max": {
+      "viewport": {
+        "width": 430,
+        "height": 740
+      }
+    }
+  },
+  "tests": [
+    "iPhone viewport meta opts into the notch safe area",
+    "safe-area insets are used by the page shell",
+    "form controls stay at 16px so iOS does not zoom on focus",
+    "primary controls meet the 44px touch target",
+    "390 and 320 widths have no horizontal overflow on any page",
+    "cloud panel is present but the SDK is not requested until the user asks",
+    "invalid email is rejected locally without any network request",
+    "smaller and larger iPhones keep the layout usable",
+    "no page errors across the iPhone runs"
+  ],
+  "errors": [],
+  "externalRequests": []
+}

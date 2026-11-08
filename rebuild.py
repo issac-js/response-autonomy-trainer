@@ -13,6 +13,11 @@ for size in (32,64):
 html,n=re.subn(r'<!--ICON_LINKS-->',''.join(icons),html,count=1)
 if n!=1:raise ValueError('Missing icon placeholder')
 
+# iOS home-screen icon (180x180) must be a single apple-touch-icon link.
+apple=base64.b64encode(root.joinpath('assets/icon-180.png').read_bytes()).decode()
+html,n=re.subn(r'<!--APPLE_ICON-->',f'<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,{apple}">',html,count=1)
+if n!=1:raise ValueError('Missing apple icon placeholder')
+
 for name,filename in [('bank','cards.json'),('dialogue-bank','dialogues.json')]:
     content=json.loads(root.joinpath(filename).read_text('utf-8'))
     escaped=json.dumps(content,ensure_ascii=False,separators=(',',':')).replace('</','<\\/')
@@ -21,7 +26,7 @@ for name,filename in [('bank','cards.json'),('dialogue-bank','dialogues.json')]:
 engine=root.joinpath('vendor/ts-fsrs-5.4.2.umd.js').read_text('utf-8')
 engine=re.sub(r'//# sourceMappingURL=.*','',engine)
 engine='/* ts-fsrs 5.4.2 — MIT License\n'+root.joinpath('vendor/LICENSE-ts-fsrs.txt').read_text('utf-8')+'\n*/\n'+engine
-app='\n'.join(root.joinpath(n).read_text('utf-8') for n in ['coach-data.js','data.js','form-guard.js','voice.js','single.js','settings.js','coach.js','app.js'])
+app='\n'.join(root.joinpath(n).read_text('utf-8') for n in ['coach-data.js','data.js','form-guard.js','voice.js','single.js','settings.js','cloud.js','coach.js','app.js'])
 html=html.replace('/*FSRS_ENGINE*/',engine.replace('</script','<\\/script')).replace('/*APP_SOURCE*/',app.replace('</script','<\\/script'))
 root.joinpath('index.html').write_text(html,'utf-8',newline='\n')  # stable LF output across OSes
 print('Built self-contained index.html')

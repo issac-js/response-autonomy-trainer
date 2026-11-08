@@ -1,5 +1,5 @@
 // Persistence and migration are independent of UI and scheduler internals.
-const STORE='response-autonomy-v01', APP_VERSION='0.4.2';
+const STORE='response-autonomy-v01', APP_VERSION='0.5.0';
 const TODAY=()=>new Date().toLocaleDateString('sv-SE');
 const defaultData=()=>({version:1,schemaVersion:3,appVersion:APP_VERSION,revision:0,created:new Date().toISOString(),settings:{newPerDay:5,timer:false,showReason:true},cards:{},history:[],writes:{},dialogueHistory:[],coach:newCoach()});
 const record=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -48,7 +48,9 @@ function save(){
   if(storageFault)throw Error(storageFault);
   if(localStorage.getItem(STORE)!==persistedRaw)throw Error('另一个页面已修改学习记录。请先导出本页未保存记录，再重新打开应用，避免覆盖较新的进度。');
   const next=validateData({...data,revision:(data.revision||0)+1}),raw=JSON.stringify(next);
-  localStorage.setItem(STORE,raw);persistedRaw=raw;data=next;return true;
+  localStorage.setItem(STORE,raw);persistedRaw=raw;data=next;
+ if(typeof cloudAfterSave==='function')cloudAfterSave();
+ return true;
  }catch(e){pendingBackup=JSON.stringify(data);try{data=persistedRaw?validateData(JSON.parse(persistedRaw)):defaultData()}catch(_){}alert('保存未完成：'+e.message+' 当前练习仍留在页面，可重试或在设置中导出未保存记录。');return false}
 }
 function restoreBackup(obj){
@@ -65,6 +67,18 @@ function restoreBackup(obj){
  if(before!==null)try{localStorage.setItem(STORE+'-before-import',before)}catch(e){snapshot='failed';try{localStorage.removeItem(STORE+'-before-import')}catch(_){}}
  data=next;persistedRaw=raw;storageFault='';pendingBackup=null;
  return snapshot;
+}
+// Replace the local record with a validated cloud snapshot. The current bytes
+// are kept under -before-remote so a wrong choice stays recoverable.
+function adoptRemote(obj,revision){
+ const candidate=validateData(obj);
+ const rev=Number.isSafeInteger(revision)&&revision>0?revision:(candidate.revision||0);
+ const next={...candidate,revision:rev};
+ const before=localStorage.getItem(STORE),raw=JSON.stringify(next);
+ localStorage.setItem(STORE,raw);
+ if(before!==null)try{localStorage.setItem(STORE+'-before-remote',before)}catch(e){}
+ data=next;persistedRaw=raw;storageFault='';pendingBackup=null;
+ return true;
 }
 const scheduler=FSRS.fsrs({request_retention:0.9,maximum_interval:36500,enable_fuzz:false,enable_short_term:true,learning_steps:['1m','10m'],relearning_steps:['10m']});
 function scheduleReview(s,grade,now=new Date()){
