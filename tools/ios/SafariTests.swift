@@ -46,17 +46,30 @@ final class SafariTests: XCTestCase {
         capture("Before first commit tap")
         logStep("before first commit tap", safari: safari, web: web)
         XCTAssertTrue(commit.isEnabled, "Native typing must enable commit before the first tap")
+        print("COMMIT_FRAME \(commit.frame) WEB \(web.frame)")
         commit.tap() // One tap must commit the answer, not merely dismiss the keyboard.
         capture("Immediately after first commit tap")
         logStep("immediately after first commit tap", safari: safari, web: web)
         let skip = web.buttons["跳过分类 · 直接看示范与解析"].firstMatch
-        let advanced = skip.waitForExistence(timeout: 10)
+        let advanced = skip.waitForExistence(timeout: 3)
         capture("After waiting for strategy step")
         logStep("after waiting for strategy step", safari: safari, web: web)
         if !advanced {
             print("SAFARI_HIERARCHY_BEGIN")
             print(safari.debugDescription)
             print("SAFARI_HIERARCHY_END")
+            // Diagnostic only: a successful retry must not satisfy first-tap acceptance.
+            if commit.exists && commit.isEnabled && commit.isHittable {
+                print("RETRY_TAP")
+                print("RETRY_COMMIT_FRAME \(commit.frame) WEB \(web.frame)")
+                commit.tap()
+                let retryAdvanced = skip.waitForExistence(timeout: 5)
+                print("RETRY_ADVANCED: \(retryAdvanced)")
+            } else {
+                print("RETRY_TAP_UNAVAILABLE: original commit is absent, disabled or not hittable")
+            }
+            capture("After diagnostic retry")
+            logStep("after diagnostic retry", safari: safari, web: web)
         }
         XCTAssertTrue(advanced, "One enabled commit tap must advance to the strategy step")
         for _ in 0..<8 {
