@@ -5,7 +5,8 @@ function coachScore(id){const v=document.getElementById(id)?.value;return v===''
 // DOM lookups still use the raw id, because HTML entity decoding restores it.
 function coachScoreInput(id,label,value=null,group='',owner='',field=''){
  const htmlId=safe(id),attr=group?unsavedAttrs(group,owner,'',field||id):'';
- return `<label for="${htmlId}">${safe(label)}（可选，0–10）</label><select id="${htmlId}"${attr}><option value="">暂不记录</option>${Array.from({length:11},(_,n)=>`<option value="${n}" ${value===n?'selected':''}>${n}</option>`).join('')}</select>`
+ const descriptions=['很平静，没有明显不适','有一点在意，几乎不影响交流','轻微紧张，仍能自然表达','能感觉到紧张，仍愿意继续','有些分心，需要稍想一下','明显紧张，需要放慢节奏','较难集中，愿意时可降低难度','很紧张，继续表达有些吃力','很难继续，想暂停或换轻松练习','非常强烈，难以继续交流','此刻能想象的最强不适，先停下来照顾自己'];
+ return `<label for="${htmlId}">${safe(label)}（可选，0–10）</label><select id="${htmlId}"${attr}><option value="">暂不记录</option>${Array.from({length:11},(_,n)=>`<option value="${n}" ${value===n?'selected':''}>${n} · ${safe(descriptions[n])}</option>`).join('')}</select><p class="small muted">只和你自己此刻的感受比较，不是诊断或考核；不用精确，可以选大概接近的一项，也可暂不记录。不适没有下降也可完成练习，较强时可以暂停。</p>`
 }
 function coachCheckInputs(prefix,group='',owner=''){
  return Object.entries(COACH_CHECKS).map(([k,v])=>{
@@ -17,7 +18,7 @@ function coachChecks(prefix){return Object.fromEntries(Object.keys(COACH_CHECKS)
 function coachId(){try{const id=window.crypto?.randomUUID?.();if(id)return id}catch(e){}return Date.now()+'-'+Math.random().toString(36).slice(2)}
 function coachPrompt(d,turn=d.turn){const s=PRACTICES[d.scenario];return turn===0?s.prompt:turn===1?(s.branches[d.steps[0]?.action]||s.branches.other):s.work}
 function coachFacts(d,turn=d.turn){const s=PRACTICES[d.scenario];return turn===0?s.facts:turn===1?s.second:s.required}
-function coachOpen(){requestEpoch++;challengeLevel=null;stopVoice();clearTimer();page='coach';render()}
+function coachOpen(){clearPracticeStatus();requestEpoch++;challengeLevel=null;stopVoice();clearTimer();page='coach';render()}
 function coachReviewCards(){
  today=TODAY();const targetIds=new Set(['RA-003','RA-010',...data.coach.triggers.flatMap(t=>COACH_CARD_IDS[t])]);
  const due=dueList().filter(c=>targetIds.has(c.id)).map(c=>c.id).slice(0,3),allowance=Math.max(0,data.settings.newPerDay-startedToday());

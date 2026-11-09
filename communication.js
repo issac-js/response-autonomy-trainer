@@ -30,6 +30,13 @@ function renderCommunication(){
   const select=document.getElementById('communicationVariant');if(select)select.onchange=e=>{s.variant=e.target.value;s.answers[1]='';communicationSave();renderCommunication()};
  }else{
   document.getElementById('communicationAgain').onclick=()=>{s.variant=lesson.variants.find(v=>v[0]!==s.variant)[0];s.stage=1;s.answers[1]='';communicationSave();renderCommunication()};
-  document.getElementById('communicationTransfer').onclick=()=>{if(data.coach.draft){document.getElementById('communicationStatus').textContent='已有未完成模拟，请先结束该模拟，再填写新的真实交流计划。';return}coachPane='real';setPage('coach');unsavedRestore();const context=document.getElementById('realContext');if(context&&!context.value.trim()){context.value=lesson.transfer;context.dispatchEvent(new Event('input',{bubbles:true}))}};
+  document.getElementById('communicationTransfer').onclick=()=>openRealPractice(lesson.transfer,'communicationStatus');
  }
+}
+
+// Shared handoff: keep existing drafts and require the user to save a real plan.
+function openRealPractice(context='',statusId=''){
+ if(data.coach.draft){const status=document.getElementById(statusId);if(status)status.textContent='已有未完成模拟，请先结束该模拟，再填写新的真实交流计划。';return}
+ coachPane='real';setPage('coach');unsavedRestore();
+ const field=document.getElementById('realContext');if(field&&!field.value.trim()&&context){field.value=context;field.dispatchEvent(new Event('input',{bubbles:true}))}
 }

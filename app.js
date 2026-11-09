@@ -9,14 +9,15 @@ const dueList=()=>CARDS.filter(c=>{const s=state(c.id);return s.fsrs?Date.parse(
 const freshList=()=>CARDS.filter(x=>!state(x.id).first);
 const stats=()=>{const h=data.history,judged=h.filter(x=>typeof x.correct==='boolean');return {judged:judged.length,created:CARDS.filter(c=>state(c.id).first).length,correct:judged.filter(x=>x.correct).length,total:h.length,rate:judged.length?Math.round(judged.filter(x=>x.correct).length/judged.length*100):0,due:dueList().length,newRemain:Math.max(0,data.settings.newPerDay-startedToday())}};
 const clearTimer=()=>{if(timerHandle){clearInterval(timerHandle);timerHandle=null}};
-function setPage(p){requestEpoch++;if(typeof practiceRemember==='function')practiceRemember();clearTimer();stopVoice();if(page==='coach'&&data.coach?.draft&&!storageFault){if(!save())return;unsavedClear('coachSim')}current=null;page=p;render()}
+function clearPracticeStatus(){const status=document.getElementById('practiceStatus');if(status)status.textContent=''}
+function setPage(p){clearPracticeStatus();requestEpoch++;if(typeof practiceRemember==='function')practiceRemember();clearTimer();stopVoice();if(page==='coach'&&data.coach?.draft&&!storageFault){if(!save())return;unsavedClear('coachSim')}current=null;page=p;render()}
 function nav(){const active=page==='play'?(source==='single'?'bank':'home'):page;document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===active))}
 function render(){today=TODAY();nav();if(storageFault&&page!=='settings'){root.innerHTML=`<section class="panel"><h2>已有记录需要恢复</h2><p class="notice" role="alert">${safe(storageFault)}</p><button class="primary" onclick="appSettings()">前往备份与恢复</button></section>`;return}if(page==='home')renderHome();if(page==='communication')renderCommunication();if(page==='bank')renderBank();if(page==='coach')renderCoach();if(page==='stats'){renderStats();renderDialogueStats();renderCoachHistory()};if(page==='dialogue')renderDialogue();if(page==='settings')renderSettings();if(page==='play')renderPlay()}
 function renderHome(){let s=stats(),done=data.history.filter(x=>x.date===today).length;root.innerHTML=`<section class="panel"><h2>今日训练</h2><div id="practiceResume"></div><p class="muted">每天先复习到期卡片，再学习新卡。先独立回应，再对照策略，最后按自己的表现自评。</p><div class="grid"><div class="stat"><strong>${s.due}</strong><span>到期复习</span></div><div class="stat"><strong>${s.newRemain}</strong><span>今日可学新卡</span></div><div class="stat"><strong>${done}</strong><span>今日卡片练习次数</span></div></div><div class="actions"><button class="primary" id="daily">开始今日训练</button><button class="secondary" id="random">混合自由练习</button><button class="secondary" onclick="setPage('communication')">沟通方法：先学判断，再练接话与协调</button></div><p class="small muted">卡库 ${CARDS.length} 张，已接触 ${s.created} 张。自由练习不受每日新卡限制；完成自评的新卡计入今日已学数量。复习卡按到期时间出现。</p></section><section class="panel"><h2>针对 A＋B＋D 的自主回应练习</h2><p>先记录担心的结果，再完成三轮模拟，观察想追加解释的冲动，并用低风险真实交流核对预测。</p><button class="primary" onclick="coachOpen()">进入个人练习</button><h3>反应选择权：先不急着答</h3><div class="scene"><b>遇到突兀或带预设的问题</b><div class="quote">“怎么突然问这个？你指的是哪件具体的事？”</div></div><p>如果是职责内且事实清楚的问题，直接如实回答；如果涉及隐私、错误前提或权限，先澄清、纠正或拒绝。目标是做对判断，而不是一律防备别人。</p><div class="notice"><b>今日微练习：</b>遇到提问时，先默念“我有选择”，然后自然判断是否直接答。不要刻意制造紧张。</div></section>`;document.getElementById('daily').onclick=()=>start('daily');document.getElementById('random').onclick=()=>start('mixed')}
 function start(kind,ids){requestEpoch++;challengeLevel=null;stopVoice();today=TODAY();source=kind;let due=dueList().map(c=>c.id),fresh=freshList().slice(0,Math.max(0,data.settings.newPerDay-startedToday())).map(c=>c.id);
 if(ids)session=[...ids];else if(kind==='daily')session=[...due,...fresh];else session=[...CARDS.map(x=>x.id)].sort(()=>Math.random()-.5).slice(0,Math.min(10,CARDS.length));
 if(!session.length){alert('目前没有到期卡或新卡。可以选择“混合自由练习”。');return}page='play';nav();advance()}
-function renderBank(){let groups=[...new Set(CARDS.map(x=>x.group))];root.innerHTML=`<section class="panel"><h2>随机挑战</h2><p class="small muted">按难度实时生成新题，训练识别而不是背句子。需要联网；生成题不进入卡片库统计，但会记录在复盘历史。</p><div class="actions"><button class="secondary" data-challenge="ramp">难度递增</button><button class="secondary" data-challenge="hard">高难度</button><button class="secondary" data-challenge="hell">地狱</button></div></section><section class="panel"><h2>${CARDS.length}张情境卡片</h2><p class="muted">可按主题筛选，也可点击单张卡开始完整练习。浏览卡片不会自动泄露答案。</p><div class="filters"><select id="group"><option value="">全部主题</option>${groups.map(g=>`<option value="${safe(g)}">${safe(g)}</option>`).join('')}</select><input type="text" id="search" placeholder="搜索提问、情境或关键词" aria-label="搜索卡片"></div><div id="bankrows"></div></section>`;let g=document.getElementById('group'),s=document.getElementById('search');const update=()=>{let list=CARDS.filter(c=>(!g.value||c.group===g.value)&&(!s.value||[c.question,c.signal,c.scene,c.group].join(' ').includes(s.value.trim())));document.getElementById('bankrows').innerHTML=list.map(c=>`<div class="tablelike"><div><div><span class="tag">${safe(c.id)}</span> · ${safe(c.signal)} ${unsavedHas('single',c.id)?'<span class="tag">有未提交草稿</span>':''}</div><div class="small muted">${safe(c.question)}</div></div><button class="ghost" data-start="${c.id}">练习</button></div>`).join('')||'<p class="muted">无匹配卡片。</p>';document.querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>start('single',[b.dataset.start]))};g.onchange=update;s.oninput=update;update();root.querySelectorAll('[data-challenge]').forEach(b=>b.onclick=()=>startChallenge(b.dataset.challenge))}
+function renderBank(){let groups=[...new Set(CARDS.map(x=>x.group))];root.innerHTML=`<section class="panel"><h2>随机挑战</h2><p class="small muted">按难度实时生成新题，训练识别而不是背句子。需要联网；生成题不进入卡片库统计，但会记录在复盘历史。</p><div class="actions"><button class="secondary" data-challenge="ramp">难度递增</button><button class="secondary" data-challenge="hard">高难度</button><button class="secondary" data-challenge="hell">地狱</button></div></section><section class="panel"><h2>${CARDS.length}张情境卡片</h2><p class="muted">可按主题筛选，也可点击单张卡开始完整练习。浏览卡片不会自动泄露答案。</p><div class="filters"><select id="group"><option value="">全部主题</option>${groups.map(g=>`<option value="${safe(g)}">${safe(g)}</option>`).join('')}</select><input type="text" id="search" placeholder="搜索提问、情境或关键词" aria-label="搜索卡片"></div><div id="bankrows"></div></section>`;let g=document.getElementById('group'),s=document.getElementById('search');const update=()=>{let list=CARDS.filter(c=>(!g.value||c.group===g.value)&&(!s.value||[c.question,c.signal,c.scene,c.group].join(' ').includes(s.value.trim())));document.getElementById('bankrows').innerHTML=list.map(c=>`<div class="tablelike"><div><div><span class="tag">${safe(c.id)}</span> · ${safe(c.signal)} ${unsavedHas('single',c.id)?'<span class="tag">有未提交草稿</span>':''}</div><div class="small muted">${safe(c.question)}</div></div><button class="ghost" data-start="${c.id}">练习</button></div>`).join('')||'<p class="muted">无匹配卡片。</p>';document.querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>start('single',[b.dataset.start]))};g.onchange=update;s.oninput=update;update();root.querySelectorAll('[data-challenge]').forEach(b=>b.onclick=()=>startChallenge(b.dataset.challenge));renderPreparation()}
 const CHALLENGE_LABEL={ramp:'难度递增',hard:'高难',hell:'地狱'};
 function challengeLevelFor(){if(challengeLevel==='hell')return '地狱';if(challengeLevel==='hard')return '高难';return challengeStep<3?'进阶':challengeStep<6?'高难':'地狱'}
 async function startChallenge(level,step=0){challengeLevel=level;challengeStep=step;await generateNext()}
@@ -24,10 +25,11 @@ function startGenerated(card){if(typeof practiceEnable==='function')practiceEnab
 async function generateNext(){
  if(challengeBusy)return;
  const level=challengeLevelFor(),epoch=++requestEpoch;challengeBusy=true;stopVoice();clearTimer();current=null;
- root.innerHTML=`<section class="panel"><h2>随机挑战 · ${level}</h2><p class="muted">正在生成题目…</p><p class="small muted">需要联网；生成失败不会影响已有记录。</p></section>`;
+ root.innerHTML=`<section class="panel"><h2>随机挑战 · ${level}</h2><p class="muted">正在准备题目…</p><p class="small muted">AI生成需要等待；已有73张本地卡片可立即练习。离开后生成成功的题目会暂存，不会强制切页。</p><button class="secondary" id="genLocal">先练本地卡片，不等生成</button></section>`;
+ document.getElementById('genLocal').onclick=()=>{challengeLevel=null;setPage('bank')};
  try{
-  const card=await aiGenerateCase(level);
-  if(epoch!==requestEpoch)return;startGenerated(card);
+  const card=takePrepared(level)||await aiGenerateCase(level);
+  if(epoch!==requestEpoch){putPrepared(card);return;}startGenerated(card);
  }catch(e){
   if(epoch!==requestEpoch)return;
   root.innerHTML=`<section class="panel"><h2>随机挑战 · ${level}</h2><p class="notice small">${safe(aiErrorMessage(e))}</p><div class="actions"><button class="primary" id="genRetry">重试</button><button class="secondary" id="genBack">返回卡片库</button></div></section>`;
@@ -56,14 +58,14 @@ function dialogueSave(){
   const d=dialogueState;
   const empty=!d||d.finished||(!d.draft.trim()&&!d.steps.length&&d.selected===null&&!d.ready);
   if(empty){sessionStorage.removeItem(DIALOGUE_KEY);return}
-  sessionStorage.setItem(DIALOGUE_KEY,JSON.stringify({scenario:d.scenario.id,node:d.node,turn:d.turn,selected:d.selected,ready:d.ready,draft:d.draft,steps:d.steps}));
+  sessionStorage.setItem(DIALOGUE_KEY,JSON.stringify({scenario:d.scenario.id,node:d.node,turn:d.turn,selected:d.selected,ready:d.ready,draft:d.draft,steps:d.steps,referenceOnly:!!d.referenceOnly}));
  }catch(e){}
 }
 function dialogueResume(id){
  const s=dialogueSaved();if(!s||s.scenario!==id)return null;
  const sc=SCENARIOS.find(x=>x.id===id);
  if(!sc||typeof s.node!=='string'||!sc.nodes[s.node]||!Number.isInteger(s.turn)||s.turn<0||s.turn>2||!Array.isArray(s.steps))return null;
- return {scenario:sc,node:s.node,turn:s.turn,selected:s.selected===null||s.selected===undefined?null:(Number.isInteger(s.selected)?s.selected:null),ready:!!s.ready,draft:typeof s.draft==='string'?s.draft:'',steps:s.steps,finished:false};
+ return {scenario:sc,node:s.node,turn:s.turn,selected:s.selected===null||s.selected===undefined?null:(Number.isInteger(s.selected)?s.selected:null),ready:!!s.ready,draft:typeof s.draft==='string'?s.draft:'',steps:s.steps,referenceOnly:s.referenceOnly===true,finished:false};
 }
 function dialogueClear(){try{sessionStorage.removeItem(DIALOGUE_KEY)}catch(e){}}
 function renderDialogue(){
@@ -84,27 +86,30 @@ function renderDialogue(){
       const own=document.getElementById('dialogueOwn'),commit=document.getElementById('commitReply');
       function sync(){ds.draft=own.value;commit.disabled=!own.value.trim();dialogueSave()}
       own.addEventListener('input',sync);sync();mountVoice('voice-slot');
-      commit.onclick=()=>{if(!ds.draft.trim())return;stopVoice();ds.ready=true;dialogueSave();renderDialogue()};
+      firstTap(commit,()=>{if(!ds.draft.trim())return;stopVoice();ds.ready=true;dialogueSave();renderDialogue()});
       document.getElementById('dialogueBack').onclick=()=>{if(confirm('退出当前模拟？本轮尚未完成的练习不会保存。')){stopVoice();unsavedClear('dialogue',sc.id);dialogueClear();dialogueState=null;renderDialogue()}};
     }else{
-      root.innerHTML=header+`<h3>第二步 · 选择与你原话最接近的行动</h3><div class="quote-reply"><b>你的原话：</b>${safe(ds.draft)}</div><p class="small muted">系统只会评估所选行动的适当性，请如实选择最接近你自己原话的选项。</p><div id="branchOptions">${node.options.map((opt,i)=>`<button class="option" data-dialogue-choice="${i}">${safe(opt.text)}</button>`).join('')}</div><p class="small muted">已保留先前独立作答的原话，选项出现后不再改写。</p></section>`;
-      root.querySelectorAll('[data-dialogue-choice]').forEach(b=>b.onclick=()=>pickDialogue(Number(b.dataset.dialogueChoice)));
+      root.innerHTML=header+`<h3>${ds.referenceOnly?'第二步 · 选一条参考路线探索':'第二步 · 选择与你原话最接近的行动'}</h3><div class="quote-reply"><b>你的原话：</b>${safe(ds.draft)}</div><p class="small muted">这里是预设脚本，不会根据你的原话推断对方反应。没有匹配项也可保留原话，选择一条参考路线探索；这不代表你实际这样回答。</p>${ds.referenceOnly?'<p class="notice" role="status">已标记为参考路线：本轮不会记为原话与行动一致。</p>':'<button class="secondary" id="dialogueUnmatched">没有匹配项 · 仅探索参考路线</button>'}<div id="branchOptions">${node.options.map((opt,i)=>`<button class="option" data-dialogue-choice="${i}">${safe(opt.text)}</button>`).join('')}</div><p class="small muted">已保留先前独立作答的原话，选项出现后不再改写。</p></section>`;
+      const unmatched=document.getElementById('dialogueUnmatched');if(unmatched)unmatched.onclick=()=>{ds.referenceOnly=true;dialogueSave();renderDialogue()};
+      root.querySelectorAll('[data-dialogue-choice]').forEach(b=>firstTap(b,()=>pickDialogue(Number(b.dataset.dialogueChoice))));
     }
   }else{
     const opt=node.options[selected];
-    root.innerHTML=header+`<div class="feedback ${opt.score===2?'good':opt.score===0?'bad':''}"><b>${opt.score===2?'较合适的应对':opt.score===1?'部分有效，仍可优化':'这类反应容易引出新的问题'}</b><p>${safe(opt.reason)}</p><p class="small"><b>你的原话：</b>${safe(ds.draft)}</p><p class="small"><b>所选模拟行动：</b>${safe(opt.text)}</p></div><div class="notice small">自由回答尚未自动评估。请自己确认两者是否真的一致，不要因为选了最佳行动就把原话当作已掌握。</div><label class="small"><input type="checkbox" id="realMatch"> 我写的原话与所选行动大体一致</label><div class="actions"><button class="primary" id="dialogueNext">${opt.next?'查看对方下一句':'完成本轮并查看复盘'}</button></div></section>`;
-    document.getElementById('dialogueNext').onclick=()=>nextDialogue(document.getElementById('realMatch').checked);
+    root.innerHTML=header+`<div class="feedback ${opt.score===2?'good':opt.score===0?'bad':''}"><b>参考行动：${opt.score===2?'较合适的应对':opt.score===1?'部分有效，仍可优化':'这类反应容易引出新的问题'}</b><p>${safe(opt.reason)}</p><p class="small"><b>你的原话：</b>${safe(ds.draft)}</p><p class="small"><b>所选模拟行动：</b>${safe(opt.text)}</p></div><div class="notice small">以上只评价所选参考行动，未评价你的原话。不一致或不确定时，不要勾选；可按参考分支继续探索，或返回重练。不需要把自己改写成示范原句。</div><label class="small"><input type="checkbox" id="realMatch" ${ds.referenceOnly?'disabled':''}> 我写的原话与所选行动大体一致</label><div class="actions"><button class="primary" id="dialogueNext">${opt.next?'按参考分支查看下一句':'完成参考分支并查看复盘'}</button><button class="secondary" id="dialogueRevise">不一致 · 返回重练这一轮</button></div></section>`;
+    firstTap(document.getElementById('dialogueNext'),()=>nextDialogue(!ds.referenceOnly&&document.getElementById('realMatch').checked));
+    document.getElementById('dialogueRevise').onclick=()=>{ds.ready=false;ds.selected=null;ds.referenceOnly=false;dialogueSave();renderDialogue()};
   }
 }
-function startDialogue(id){requestEpoch++;challengeLevel=null;stopVoice();let sc=SCENARIOS.find(x=>x.id===id);if(!sc)return;dialogueState=dialogueResume(id)||{scenario:sc,node:sc.start,turn:0,selected:null,ready:false,draft:'',steps:[],finished:false};page='dialogue';render()}
+function startDialogue(id){clearPracticeStatus();requestEpoch++;challengeLevel=null;stopVoice();let sc=SCENARIOS.find(x=>x.id===id);if(!sc)return;dialogueState=dialogueResume(id)||{scenario:sc,node:sc.start,turn:0,selected:null,ready:false,draft:'',steps:[],finished:false};page='dialogue';render()}
 function pickDialogue(i){let ds=dialogueState;if(!ds||ds.selected!==null||!ds.draft.trim())return;let opts=ds.scenario.nodes[ds.node].options;if(i<0||i>=opts.length)return;ds.selected=i;dialogueSave();renderDialogue()}
 function nextDialogue(match){
  const ds=dialogueState;if(!ds||ds.selected===null)return;
  const node=ds.scenario.nodes[ds.node],opt=node.options[ds.selected];
+ match=!ds.referenceOnly&&!!match;
  ds.steps.push({turn:ds.turn+1,prompt:node.line,own:ds.draft.slice(0,1200),chosen:opt.text,score:opt.score,reason:opt.reason,match:!!match});
  // The committed turn is now part of the steps; its transient copy is no longer needed.
  unsavedClear('dialogue',ds.scenario.id);
- if(opt.next){ds.node=opt.next;ds.turn++;ds.selected=null;ds.ready=false;ds.draft='';dialogueSave();renderDialogue();return}
+ if(opt.next){ds.node=opt.next;ds.turn++;ds.selected=null;ds.ready=false;ds.referenceOnly=false;ds.draft='';dialogueSave();renderDialogue();return}
  data.dialogueHistory ||= [];
  data.dialogueHistory.push({date:TODAY(),scenario:ds.scenario.id,title:ds.scenario.title,steps:ds.steps,score:ds.steps.reduce((a,x)=>a+x.score,0),max:ds.steps.length*2});
  if(!save()){ds.steps.pop();dialogueSave();return}
@@ -112,7 +117,9 @@ function nextDialogue(match){
 }
 function renderDialogueFinished(){
  const ds=dialogueState,steps=ds.steps,total=steps.reduce((a,x)=>a+x.score,0),max=steps.length*2;
- root.innerHTML=`<section class="panel"><span class="pill">完整模拟已完成</span><h2>${safe(ds.scenario.title)}</h2><div class="grid"><div class="stat"><strong>${total}/${max}</strong><span>选择策略得分</span></div><div class="stat"><strong>${steps.filter(x=>x.match).length}/${steps.length}</strong><span>自评：原话与选项一致</span></div><div class="stat"><strong>${steps.length}</strong><span>完成的对话轮数</span></div></div><p class="muted small">得分只代表预设策略选择，不代表你的自由回答已被自动评价，更不代表真实沟通水平。</p>${steps.map(x=>`<details><summary>第${x.turn}轮 · ${x.score===2?'较合适':x.score===1?'部分有效':'有待改进'}</summary><div class="small"><b>对方：</b>${safe(x.prompt)}</div><div class="small"><b>你写的：</b>${safe(x.own)}</div><div class="small"><b>选的：</b>${safe(x.chosen)}</div><div class="small"><b>解析：</b>${safe(x.reason)}</div></details>`).join('')}<div class="notice"><b>下一次真实对话微任务：</b>当你想立刻解释时，先判断“这是真正需要回答的工作/生活问题，还是含有未证实的前提？”再选择一句简洁回应。</div><div class="actions"><button class="primary" id="againScene">重新练习此场景</button><button class="secondary" id="sceneHome">返回情境库</button></div></section>`;
+ root.innerHTML=`<section class="panel"><span class="pill">完整模拟已完成</span><h2>${safe(ds.scenario.title)}</h2><p>完成脚本只是第一步。接下来只带走一个判断、练一句自己的话，再到低风险交流中试一次。</p><details><summary>查看脚本选择与自评记录（不代表现实能力）</summary><div class="grid"><div class="stat"><strong>${total}/${max}</strong><span>选择策略得分</span></div><div class="stat"><strong>${steps.filter(x=>x.match).length}/${steps.length}</strong><span>自评：原话与选项一致</span></div><div class="stat"><strong>${steps.length}</strong><span>完成的对话轮数</span></div></div><p class="muted small">得分只代表预设策略选择；一致轮数也是你的自评，不是能力测量。选对参考行动不等于已经能独立说出来。</p></details>${steps.map(x=>`<details><summary>第${x.turn}轮 · ${x.score===2?'较合适':x.score===1?'部分有效':'有待改进'}</summary><div class="small"><b>对方：</b>${safe(x.prompt)}</div><div class="small"><b>你写的：</b>${safe(x.own)}</div><div class="small"><b>选的：</b>${safe(x.chosen)}</div><div class="small"><b>解析：</b>${safe(x.reason)}</div></details>`).join('')}<section class="notice" aria-label="模拟后的内化步骤"><h3>练完之后：理解 → 说出 → 变式 → 实践</h3><ol><li><b>只选一轮：</b>展开上面的原话与参考行动，找一个值得保留或调整的判断，不要求每轮都完美。</li><li><b>收起示范再说一次：</b>用自己的话口头回应，再重新练这一个场景；无需背参考句。</li><li><b>改变条件：</b>如果换成熟悉朋友倾诉、正式职责核查，或事实尚不清楚，还会这样说吗？在“沟通方法”中练条件变化。</li><li><b>低风险试一次：</b>写一个具体预测和小动作，之后记录实际观察；结果未知也可保存。复盘一次后回到生活，不必反复检查自己。</li></ol><p>进步可以是更能察觉、独立表达、按反馈调整与修复，不要求焦虑归零或对方立即满意。</p></section><p id="dialogueTransferStatus" class="small" role="status"></p><div class="actions"><button class="primary" id="againScene">收起示范 · 再练本场景</button><button class="secondary" id="dialogueVariant">到沟通方法练条件变化</button><button class="secondary" id="dialogueTransfer">填写一次真实交流计划</button><button class="secondary" id="sceneHome">返回情境库</button></div></section>`;
+ document.getElementById('dialogueVariant').onclick=()=>setPage('communication');
+ document.getElementById('dialogueTransfer').onclick=()=>openRealPractice('', 'dialogueTransferStatus');
  document.getElementById('againScene').onclick=()=>startDialogue(ds.scenario.id);
  document.getElementById('sceneHome').onclick=()=>{stopVoice();unsavedClear('dialogue',ds.scenario.id);dialogueClear();dialogueState=null;renderDialogue()};
 }

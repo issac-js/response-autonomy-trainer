@@ -399,17 +399,32 @@ function validateGenerated(o){
  if(!mechanismByKey(o.mechanism))return null;
  return {scene:o.scene.trim(),question:o.question.trim(),options:o.options.map(x=>x.trim()),correct:o.correct,rationale:o.rationale.trim(),principle:o.principle.trim(),model:o.model.trim(),mechanism:o.mechanism,mechanismWhy:typeof o.mechanismWhy==='string'?o.mechanismWhy.trim().slice(0,200):''};
 }
-async function aiGenerateCase(level){
- const now=Date.now();
- if(now-genLast<10000)throw Error('出题太快了，等十秒再来一题。');
- const c=await loadCloudSdk();
- const models=modelChain((await c.llm.models.list()||[]).filter(m=>m&&m.disabled!==true));
- if(!models.length)throw Error('当前没有可用模型');
- genLast=now;
- const got=await collectWithFallback(c,models,[{role:'system',content:GEN_SYSTEM},{role:'user',content:'难度：'+level+'。请出题。'}],0.8);
- const o=validateGenerated(parseJsonBlock(got.text));
- if(!o)throw Error('生成的题目不完整，请再试一次。');
- const used=new Set([...CARDS.map(c=>c.id),...Object.keys(data.cards),...data.history.map(h=>h.id)]);
- const id=generatedReserve(used);
- return {id,group:'随机挑战',signal:mechanismByKey(o.mechanism).label,generated:true,level,...o};
+let generationInFlight=false,modelListCache=null,modelListAt=0,modelListPending=null;
+async function generationModels(client){
+ if(modelListCache&&Date.now()-modelListAt<300000)return modelChain(modelListCache);
+ if(!modelListPending)modelListPending=Promise.resolve().then(()=>client.llm.models.list()).then(models=>{modelListCache=(models||[]).filter(m=>m&&m.disabled!==true);modelListAt=Date.now();return modelListCache}).finally(()=>{modelListPending=null});
+ return modelChain(await modelListPending);
+}
+async function aiGenerateBatch(level,count=3){
+ if(!['进阶','高难','地狱'].includes(level)||!Number.isInteger(count)||count<1||count>3)throw Error('备题参数无效');
+ return generateCases(level,count);
+}
+async function aiGenerateCase(level){return (await generateCases(level,1))[0]}
+async function generateCases(level,count){
+ if(generationInFlight)throw Error('已有出题请求正在进行，请先练本地卡片或稍后再试。');
+ if(Date.now()-genLast<10000)throw Error('出题太快了，等十秒再来一题。');
+ generationInFlight=true;
+ try{
+  const c=await loadCloudSdk(),models=await generationModels(c);
+  if(!models.length)throw Error('当前没有可用模型');
+  genLast=Date.now();
+  const system=GEN_SYSTEM+(count>1?'\n本次为批量备题：只输出一个对象 {"cases":[...]}，数组必须有'+count+'个不同题目，每项遵守上面的题目字段与质量要求。':'');
+  const got=await collectWithFallback(c,models,[{role:'system',content:system},{role:'user',content:'难度：'+level+'。请出'+count+'题。'}],0.8);
+  const raw=parseJsonBlock(got.text),items=count===1?[raw]:raw?.cases;
+  if(!Array.isArray(items)||items.length!==count)throw Error('生成题数不完整，已有备题不变，请稍后再试。');
+  const validated=items.map(validateGenerated);
+  if(validated.some(o=>!o)||new Set(validated.map(o=>o.question)).size!==count)throw Error('生成的题目不完整或重复，请再试一次。');
+  const used=new Set([...CARDS.map(c=>c.id),...Object.keys(data.cards),...data.history.map(h=>h.id)]);
+  return validated.map(o=>{const id=generatedReserve(used);used.add(id);return {id,group:'随机挑战',signal:mechanismByKey(o.mechanism).label,generated:true,level,...o}});
+ }finally{generationInFlight=false}
 }
