@@ -1,5 +1,5 @@
 // Optional cloud sync. The SDK is loaded lazily so the single-file app keeps
-// working offline with zero external requests until the user asks for sync.
+// working offline; only users who previously opted in restore a cloud session.
 const CLOUD_CFG={
  endpoint:'https://response-autonomy-trainer.app.workbuddy.host',
  oauthRelayBaseUrl:'https://www.workbuddy.cn/v2/as/genie-baas/oauth',
@@ -8,10 +8,10 @@ const CLOUD_CFG={
 const CLOUD_META_KEY='response-autonomy-v01-cloud';
 const CLOUD_SDK_URL=location.protocol==='file:'?'https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@0.1.4-dev.ca27990.202610161713/lib/index.global.js':'vendor/workbuddy-cloud-sdk.js';
 let cloudClient=null,cloudLoading=null,cloudSession=null,cloudMeta=cloudMetaRead(),cloudSyncTimer=null,cloudBusy=false,cloudFlash='';
-let cloudOtp=null;
+let cloudOtp=null,cloudAuthState='idle',cloudHadCredentials=false,cloudAuthEpoch=0,cloudSessionPending=null,cloudRestorePending=null,cloudLastRestore=0;
 
 function cloudMetaRead(){
- try{const raw=localStorage.getItem(CLOUD_META_KEY),o=raw?JSON.parse(raw):{};return o&&typeof o==='object'?{base:Number(o.base)||0,baseHash:typeof o.baseHash==='string'?o.baseHash:'',owner:typeof o.owner==='string'?o.owner:'',auto:o.auto!==false,enabled:!!o.enabled,lastSync:o.lastSync||'',email:typeof o.email==='string'?o.email:''}:{base:0,auto:true,enabled:false,lastSync:'',email:''}}catch(e){return {base:0,auto:true,enabled:false,lastSync:'',email:''}}
+ try{const raw=localStorage.getItem(CLOUD_META_KEY),o=raw?JSON.parse(raw):{};return o&&typeof o==='object'?{remember:typeof o.remember==='boolean'?o.remember:!!(o.enabled||o.owner||o.lastSync),base:Number(o.base)||0,baseHash:typeof o.baseHash==='string'?o.baseHash:'',owner:typeof o.owner==='string'?o.owner:'',auto:o.auto!==false,enabled:!!o.enabled,lastSync:o.lastSync||'',email:typeof o.email==='string'?o.email:''}:{base:0,auto:true,enabled:false,remember:false,lastSync:'',email:''}}catch(e){return {base:0,auto:true,enabled:false,remember:false,lastSync:'',email:''}}
 }
 function cloudMetaWrite(){try{localStorage.setItem(CLOUD_META_KEY,JSON.stringify(cloudMeta))}catch(e){}}
 function cloudLabel(){
@@ -46,14 +46,48 @@ function initCloud(){
   oauthRelayBaseUrl:CLOUD_CFG.oauthRelayBaseUrl,
   publishableKey:CLOUD_CFG.publishableKey
  });
+ if(typeof cloudClient.auth.onAuthStateChange==='function')cloudClient.auth.onAuthStateChange((event,session)=>{
+  if(event==='INITIAL_SESSION'){cloudHadCredentials=!!session;return}
+  if(event==='SIGNED_OUT'){cloudHadCredentials=false;cloudSession=null;cloudAuthState='signed-out';cloudMeta.remember=false;cloudMetaWrite()}
+  else if(session&&['SIGNED_IN','TOKEN_REFRESHED','USER_UPDATED'].includes(event)){cloudHadCredentials=true;cloudSession=session;cloudAuthState='signed-in';cloudMeta.remember=true;cloudMetaWrite()}
+  queueMicrotask(renderCloudPanel);
+ });
  return cloudClient;
 }
-async function cloudEnsureSession(){
- const c=await loadCloudSdk();
- const {data,error}=await c.auth.getSession();
- if(error){cloudSession=null;return null}
- cloudSession=data||null;
- return cloudSession;
+async function cloudEnsureSession(force=false){
+ if(cloudSessionPending)return cloudSessionPending;
+ const epoch=cloudAuthEpoch;
+ cloudSessionPending=(async()=>{
+  try{
+   const c=await loadCloudSdk();
+   const result=force&&cloudAuthState==='paused'&&typeof c.auth.refreshSession==='function'?await c.auth.refreshSession():await c.auth.getSession();
+   if(epoch!==cloudAuthEpoch)return null;
+   if(result.error)throw result.error;
+   cloudSession=result.data||null;
+   if(cloudSession){cloudHadCredentials=true;cloudAuthState='signed-in';cloudMeta.remember=true;cloudMetaWrite()}
+   else{cloudAuthState=cloudHadCredentials?'paused':'signed-out';if(!cloudHadCredentials){cloudMeta.remember=false;cloudMetaWrite()}}
+   return cloudSession;
+  }catch(e){if(epoch===cloudAuthEpoch){cloudSession=null;if(e?.kind==='unauthenticated'||e?.code==='invalid_grant'){cloudHadCredentials=false;cloudAuthState='signed-out';cloudMeta.remember=false;cloudMetaWrite()}else cloudAuthState='paused'}throw e}
+ })().finally(()=>{cloudSessionPending=null});
+ return cloudSessionPending;
+}
+async function restoreCloudSession(manual=false){
+ if(cloudRestorePending)return cloudRestorePending;
+ const epoch=cloudAuthEpoch;
+ cloudRestorePending=(async()=>{
+  const retry=cloudAuthState==='paused';
+  if(!retry)cloudAuthState='restoring';renderCloudPanel();
+  try{
+   const session=await cloudEnsureSession(retry);
+   if(epoch!==cloudAuthEpoch)return;
+   if(!session){cloudFlash=cloudAuthState==='paused'?'登录信息仍保留，暂时无法验证。联网后重试恢复，无需重新收验证码。':'没有可恢复的有效登录，请使用验证码登录。';return}
+   if(manual){cloudMeta.enabled=true;cloudMetaWrite()}
+   cloudFlash='已恢复登录。';
+   if(cloudMeta.enabled&&(manual||cloudMeta.auto))await cloudSync(false);
+  }catch(e){if(epoch===cloudAuthEpoch)cloudFlash=cloudAuthState==='signed-out'?'登录已失效，请使用验证码重新登录。本地记录保持不变。':'恢复登录暂未完成：'+cloudErr(e)+' 可以重试恢复，本地记录保持不变。'}
+  finally{cloudLastRestore=Date.now();renderCloudPanel()}
+ })().finally(()=>{cloudRestorePending=null});
+ return cloudRestorePending;
 }
 
 // ---- sync -----------------------------------------------------------------
@@ -78,12 +112,12 @@ async function cloudHash(value){
  return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
 }
 function cloudUnchanged(snapshot,raw){return cloudSnapshot()===snapshot&&localStorage.getItem(STORE)===raw}
-function cloudPracticeActive(){return unsavedDirty()||page==='play'||!!dialogueState||!!data.coach.draft}
+function cloudPracticeActive(){return unsavedDirty()||page==='play'||(!!dialogueState&&!dialogueState.finished)||!!data.coach.draft}
 async function cloudBase(payload,owner){
  cloudMeta.base=payload.revision||0;cloudMeta.baseHash=await cloudHash(payload);cloudMeta.owner=owner;
  cloudMeta.lastSync=new Date().toISOString();cloudMeta.enabled=true;cloudMetaWrite();
 }
-function cloudConflict(){cloudFlash='云端与本机内容不同，请先导出备份，再选择保留哪一份。';return {status:'conflict'}}
+function cloudConflict(){cloudFlash='已登录，无需重新登录。云端与本机内容不同，请先导出备份，再选择保留哪一份。';return {status:'conflict'}}
 async function cloudPush(force=false,knownRemote){
  const owner=cloudSession?.user?.id;
  if(!owner)throw Error('请先登录。');
@@ -128,7 +162,7 @@ async function cloudSync(manual=false){
  try{
   const snapshot=cloudSnapshot(),raw=localStorage.getItem(STORE);
   const session=await cloudEnsureSession(),owner=session?.user?.id;
-  if(!owner){if(manual)cloudFlash='请先登录再同步。';return}
+  if(!owner){if(manual)cloudFlash=cloudAuthState==='paused'?'登录暂未恢复，请先重试恢复登录；无需重复获取验证码。':'请先登录再同步。';return}
   if(cloudMeta.owner&&cloudMeta.owner!==owner){cloudConflict();return}
   const remote=await cloudPull();
   if(!cloudUnchanged(snapshot,raw))throw Error('本机记录在同步期间有变化，请重新同步。');
@@ -171,7 +205,12 @@ function renderCloudPanel(){
    <div class="actions"><button class="primary" id="cloudSyncNow">立即同步</button><button class="secondary" id="cloudPullNow">用云端覆盖本机</button><button class="secondary" id="cloudPushNow">用本机覆盖云端</button><button class="ghost" id="cloudSignOut">退出登录</button></div>
    <div class="actions"><button class="ghost danger" id="cloudDelete">删除云端记录</button></div>
    <p class="small muted">“用云端覆盖本机”会替换本机记录，执行前请先导出备份。“删除云端记录”只删云端，本机保留。</p>
+  `:cloudAuthState==='restoring'||cloudAuthState==='paused'?`
+   <p role="status">${cloudAuthState==='restoring'?'正在恢复已有登录…':'暂时无法验证已有登录，请联网后重试恢复。'}</p>
+   <div class="actions"><button class="secondary" id="cloudRestoreLogin" ${cloudAuthState==='restoring'?'disabled':''}>重试恢复登录并同步</button><button class="ghost" id="cloudUseCode" ${cloudAuthState==='restoring'?'disabled':''}>改用验证码登录</button></div>
   `:`
+   <button class="secondary" id="cloudRestoreLogin">恢复已有登录并同步</button>
+   <p class="small muted">首次登录需要验证码；同一浏览器中会尝试保持登录。无痕、清除网站数据或更换Safari/主屏幕入口可能需要再次验证。</p>
    <label for="cloudEmail">邮箱（用于接收登录验证码）</label>
    <input type="email" id="cloudEmail" inputmode="email" autocomplete="email" value="${safe(cloudMeta.email)}" placeholder="name@example.com">
    <div class="actions"><button class="secondary" id="cloudSendCode" type="button">获取验证码</button></div>
@@ -180,14 +219,16 @@ function renderCloudPanel(){
    <div class="actions"><button class="primary" id="cloudLogin" type="button">登录 / 注册</button></div>
    <p class="small muted" id="cloudLoginStatus" role="status"></p>
   `}`;
- if(!signed){
+ const restore=document.getElementById('cloudRestoreLogin');if(restore)restore.onclick=()=>restoreCloudSession(true);
+ const useCode=document.getElementById('cloudUseCode');if(useCode)useCode.onclick=()=>{cloudAuthState='signed-out';cloudMeta.remember=false;cloudMetaWrite();renderCloudPanel()};
+ if(!signed&&document.getElementById('cloudSendCode')){
   document.getElementById('cloudSendCode').onclick=cloudSendCode;
   document.getElementById('cloudLogin').onclick=cloudVerifyCode;
   const email=document.getElementById('cloudEmail');
   email.onchange=()=>{cloudMeta.email=email.value.trim();cloudMetaWrite()};
  }
  if(signed){
-  document.getElementById('cloudAuto').onchange=e=>{cloudMeta.auto=e.target.checked;cloudMetaWrite()};
+  document.getElementById('cloudAuto').onchange=e=>{cloudMeta.auto=e.target.checked;if(cloudMeta.auto)cloudMeta.enabled=true;cloudMetaWrite()};
   document.getElementById('cloudSyncNow').onclick=()=>cloudSync(true);
   document.getElementById('cloudPullNow').onclick=cloudPullNow;
   document.getElementById('cloudPushNow').onclick=cloudPushNow;
@@ -223,7 +264,7 @@ async function cloudVerifyCode(){
   const {data,error}=await c.auth.verifyOtp({email:cloudOtp.email,verificationId:cloudOtp.verificationId,isExistingUser:cloudOtp.isExistingUser,token:code});
   if(error)throw error;
   cloudOtp=null;cloudSession=await cloudEnsureSession();
-  cloudMeta.enabled=true;cloudMetaWrite();
+  cloudMeta.enabled=true;cloudMeta.remember=true;cloudMetaWrite();
   cloudFlash='已登录，正在核对云端记录…';
   renderCloudPanel();
   await cloudSync(false);
@@ -273,21 +314,19 @@ async function cloudDelete(){
 }
 async function cloudSignOut(){
  if(cloudBusy){cloudFlash='请等待同步完成后再退出登录。';renderCloudPanel();return}
- try{const c=await loadCloudSdk();await c.auth.signOut()}catch(e){}
- cloudSession=null;cloudMeta.enabled=false;cloudMetaWrite();
- cloudFlash='已退出登录；本机记录保持不变。';
- renderCloudPanel();
+ cloudAuthEpoch++;clearTimeout(cloudSyncTimer);
+ try{const c=await loadCloudSdk();const result=await c.auth.signOut();if(result?.error)throw result.error}
+ catch(e){cloudFlash='退出登录未完成：'+cloudErr(e);renderCloudPanel();return}
+ cloudSession=null;cloudHadCredentials=false;cloudAuthState='signed-out';cloudMeta.enabled=false;cloudMeta.remember=false;cloudMetaWrite();
+ cloudFlash='已退出登录；本机记录保持不变。';renderCloudPanel();
 }
-// Background attempt only on the published HTTPS origin, so the offline file
-// never requests the SDK.
 async function cloudBoot(){
- if(location.protocol!=='https:'||!cloudMeta.enabled)return;
- try{
-  const session=await cloudEnsureSession();
-  if(session&&cloudMeta.auto)cloudSync(false);
- }catch(e){/* offline or blocked: stay local, no user-facing error */}
+ if(location.protocol!=='https:'||!cloudMeta.remember)return;
+ return restoreCloudSession(false);
 }
-setTimeout(cloudBoot,1200);
+setTimeout(cloudBoot,0);
+window.addEventListener('online',()=>{if(cloudMeta.remember)cloudBoot()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cloudMeta.remember&&Date.now()-cloudLastRestore>15000)cloudBoot()});
 
 // ---- optional AI feedback -------------------------------------------------
 const AI_SYSTEM=`你是沟通训练应用的反馈助手。只根据用户给出的“情境”和“原话”给出简短、可执行的反馈。

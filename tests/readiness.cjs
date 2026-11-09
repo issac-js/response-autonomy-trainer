@@ -50,6 +50,111 @@ async function main(){
  await test('batch generation validates every item and caches model discovery across requests',async()=>{const {c,p}=await fresh();const result=await p.evaluate(async()=>{let lists=0,requests=0;loadCloudSdk=async()=>({llm:{models:{list:async()=>{lists++;return [{id:'fixture-model'}]}}}});collectWithFallback=async()=>{requests++;return {text:JSON.stringify({cases:Array.from({length:3},(_,i)=>({...CARDS[53],question:'合成问题第'+i+'条'}))})}};const cards=await aiGenerateBatch('高难',3);genLast=0;collectWithFallback=async()=>{requests++;return {text:JSON.stringify(CARDS[53])}};await aiGenerateCase('高难');return {lists,requests,ids:cards.map(c=>c.id)}});assert.equal(result.lists,1);assert.equal(result.requests,2);assert.equal(new Set(result.ids).size,3);await c.close()});
  await test('invalid prepared batches never enter the queue',async()=>{const {c,p}=await fresh();await p.evaluate(()=>{putPrepared({...CARDS[0],id:'RA-900',generated:true,level:'高难'});loadCloudSdk=async()=>({llm:{models:{list:async()=>[{id:'fixture'}]}}});collectWithFallback=async()=>({text:JSON.stringify({cases:[CARDS[53],{bad:true},CARDS[53]]})})});await assert.rejects(()=>p.evaluate(()=>aiGenerateBatch('高难',3)));assert.equal(await p.evaluate('preparedRead().length'),1);assert.equal(await p.evaluate('generationInFlight'),false);await c.close()});
  await test('completed dialogue guides consolidation without turning script scores into mastery',async()=>{const {c,p}=await fresh();await p.evaluate(()=>{unsavedSet({g:'coachReal',o:'',n:'',f:'realContext'},'已有现实计划草稿');startDialogue('DL-05')});for(let i=0;i<3;i++){await p.fill('#dialogueOwn','先问具体是哪件事');await p.click('#commitReply');await p.click('[data-dialogue-choice="1"]');await p.click('#dialogueNext')}assert.equal(await p.evaluate('data.dialogueHistory.length'),1);const summary=p.getByText('查看脚本选择与自评记录（不代表现实能力）',{exact:true});assert.equal(await summary.locator('..').getAttribute('open'),null);assert.match(await p.locator('#root').innerText(),/理解 → 说出 → 变式 → 实践/);assert.equal(await p.locator('#dialogueVariant').count(),1);await p.click('#dialogueTransfer');assert.equal(await p.inputValue('#realContext'),'已有现实计划草稿');assert.equal(await p.evaluate('data.coach.experiments.length'),0);assert.equal(await p.evaluate('data.dialogueHistory.length'),1);await c.close()});
+ await test('all twelve communication variants reveal causal guides after recall and preserve original wording',async()=>{
+  const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');
+  const lessons=await p.evaluate('COMMUNICATION_LESSONS.map(x=>({id:x.id,variants:x.variants.map(v=>v[0])}))');
+  for(const lesson of lessons)for(const variant of lesson.variants){
+   await p.evaluate(id=>{communicationProgress={};communicationLesson=id;setPage('communication')},lesson.id);
+   assert.equal(await p.locator('#communicationGuide').count(),0);
+   await p.fill('#communicationOwn','先核对事实，我原先的判断');await p.click('#communicationCommit');
+   assert.equal(await p.locator('#communicationGuide').count(),0);await p.selectOption('#communicationVariant',variant);
+   await p.fill('#communicationOwn','条件变化后，我调整了一个动作');await p.click('#communicationCommit');
+   const guide=p.locator('#communicationGuide');assert.equal(await guide.getAttribute('open'),null);
+   await guide.locator('summary').click();assert.equal(await guide.locator('h3').count(),6);
+   const condition=await p.evaluate(({id,variant})=>COMMUNICATION_LESSONS.find(x=>x.id===id).variants.find(v=>v[0]===variant)[1],{id:lesson.id,variant});
+   assert.ok((await guide.textContent()).includes(condition));
+   await p.setViewportSize({width:320,height:568});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+   assert.equal(await p.evaluate(id=>communicationProgress[id].answers[0],lesson.id),'先核对事实，我原先的判断');
+   await p.click('#communicationAgain');assert.equal(await p.locator('#communicationGuide').count(),0);
+   assert.equal(await p.evaluate(id=>communicationProgress[id].answers[0],lesson.id),'先核对事实，我原先的判断');
+  }
+  assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+ });
+ // Real vendored SDK with synthetic credentials and routed responses only.
+ // HTTPS fixture exercises production startup without contacting a live service.
+ async function authPage({expired=false,meta={},token}={}){
+  const {c,p}=await fresh(),calls=[];
+  await p.route('https://rat-session.test/**',route=>{
+   const name=new URL(route.request().url()).pathname.slice(1)||'index.html';
+   if(!allowed.has(name))return route.fulfill({status:404,body:''});
+   return route.fulfill({contentType:name.endsWith('.html')?'text/html':'application/javascript',body:fs.readFileSync(path.join(root,name))});
+  });
+  await p.route('https://response-autonomy-trainer.app.workbuddy.host/**',async route=>{
+   const pathname=new URL(route.request().url()).pathname;calls.push(pathname);
+   if(pathname.endsWith('/v1/token')&&token)return token(route);
+   if(pathname.endsWith('/v1/user/signout'))return route.fulfill({json:{}});
+   throw Error('Unexpected fixture API: '+pathname);
+  });
+  await p.goto('https://rat-session.test/index.html');
+  await p.evaluate(({expired,meta})=>{
+   localStorage.setItem('workbuddy-cloud.session.'+CLOUD_CFG.publishableKey,JSON.stringify({accessToken:'fixture-access',refreshToken:'fixture-refresh',expiresAt:Date.now()+(expired?-1000:3600000),user:{id:'fixture-user'}}));
+   localStorage.setItem(CLOUD_META_KEY,JSON.stringify({enabled:true,auto:false,...meta}));
+  },{expired,meta});
+  await p.reload();return {c,p,calls};
+ }
+ await test('HTTPS startup restores SDK persistence across reload with automatic sync disabled',async()=>{
+  const {c,p,calls}=await authPage();await p.waitForFunction("cloudAuthState==='signed-in'");
+  await p.click('[data-nav=settings]');await p.waitForFunction('!cloudRestorePending');
+  assert.equal(await p.locator('#cloudSignOut').count(),1);assert.equal(await p.locator('#cloudEmail').count(),0);
+  assert.equal(calls.length,0);const before=await p.evaluate('localStorage.getItem(STORE)');
+  await p.reload();await p.waitForFunction("cloudAuthState==='signed-in'");
+  assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);assert.equal(calls.length,0);await c.close();
+ });
+ await test('remembering a session is independent of enabling synchronization',async()=>{
+  const {c,p,calls}=await authPage({meta:{enabled:false,remember:true,auto:true}});
+  await p.waitForFunction("cloudAuthState==='signed-in'");assert.equal(await p.evaluate('cloudMeta.enabled'),false);
+  assert.equal(calls.length,0);await c.close();
+ });
+ await test('expired access token refreshes through the real SDK without another OTP',async()=>{
+  const {c,p,calls}=await authPage({expired:true,token:route=>route.fulfill({json:{access_token:'fixture-new-access',refresh_token:'fixture-new-refresh',expires_in:3600,sub:'fixture-user'}})});
+  await p.waitForFunction("cloudAuthState==='signed-in'");assert.equal(calls.length,1);assert.match(calls[0],/\/v1\/token$/);
+  await p.reload();await p.waitForFunction("cloudAuthState==='signed-in'");assert.equal(calls.length,1);await c.close();
+ });
+ await test('temporary refresh failure preserves credentials and one retry bypasses SDK cooldown',async()=>{
+  let attempts=0;
+  const {c,p,calls}=await authPage({expired:true,token:route=>++attempts===1?route.fulfill({status:503,json:{message:'fixture temporarily unavailable'}}):route.fulfill({json:{access_token:'fixture-new-access',refresh_token:'fixture-new-refresh',expires_in:3600,sub:'fixture-user'}})});
+  await p.waitForFunction("cloudAuthState==='paused'&&!cloudRestorePending");
+  assert.equal(await p.evaluate("!!localStorage.getItem('workbuddy-cloud.session.'+CLOUD_CFG.publishableKey)"),true);
+  const before=await p.evaluate('localStorage.getItem(STORE)');
+  // Install the panel without entering settings, whose normal recovery is also tested.
+  await p.evaluate(()=>{document.getElementById('root').innerHTML='<div id="cloudPanel"></div>';renderCloudPanel();window.syncCalls=0;cloudSync=async()=>{window.syncCalls++}});
+  assert.equal(await p.locator('#cloudEmail').count(),0);await p.click('#cloudRestoreLogin');
+  await p.waitForFunction("cloudAuthState==='signed-in'&&!cloudRestorePending");
+  assert.equal(attempts,2);assert.equal(calls.length,2);assert.equal(await p.evaluate('window.syncCalls'),1);
+  assert.equal(await p.evaluate('cloudMeta.auto'),false);assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+ });
+ await test('rejected refresh credentials offer OTP instead of claiming a recoverable session',async()=>{
+  const {c,p}=await authPage({expired:true,token:route=>route.fulfill({status:401,json:{error:'invalid_grant',error_description:'fixture credentials revoked'}})});
+  await p.waitForFunction("cloudAuthState==='signed-out'&&!cloudRestorePending");
+  await p.click('[data-nav=settings]');assert.equal(await p.locator('#cloudEmail').count(),1);
+  assert.equal(await p.evaluate('cloudMeta.remember'),false);
+  assert.equal(await p.evaluate("localStorage.getItem('workbuddy-cloud.session.'+CLOUD_CFG.publishableKey)"),null);await c.close();
+ });
+ await test('coming online retries a paused refresh and applies the existing automatic sync preference',async()=>{
+  let attempts=0;
+  const {c,p}=await authPage({expired:true,meta:{auto:true},token:route=>++attempts===1?route.fulfill({status:503,json:{message:'fixture temporarily unavailable'}}):route.fulfill({json:{access_token:'fixture-new-access',refresh_token:'fixture-new-refresh',expires_in:3600,sub:'fixture-user'}})});
+  await p.waitForFunction("cloudAuthState==='paused'&&!cloudRestorePending");
+  await p.evaluate(()=>{window.syncCalls=0;cloudSync=async()=>{window.syncCalls++};window.dispatchEvent(new Event('online'))});
+  await p.waitForFunction("cloudAuthState==='signed-in'&&!cloudRestorePending");
+  assert.equal(attempts,2);assert.equal(await p.evaluate('window.syncCalls'),1);await c.close();
+ });
+ await test('foreground and online recovery share one refresh and never alter local records',async()=>{
+  let release;const gated=new Promise(r=>release=r);
+  const {c,p,calls}=await authPage({expired:true,token:async route=>{await gated;return route.fulfill({json:{access_token:'fixture-new-access',refresh_token:'fixture-new-refresh',expires_in:3600,sub:'fixture-user'}})}});
+  await p.waitForFunction('!!cloudSessionPending');const before=await p.evaluate('localStorage.getItem(STORE)');
+  await p.evaluate(()=>{window.dispatchEvent(new Event('online'));document.dispatchEvent(new Event('visibilitychange'));restoreCloudSession(false)});
+  release();await p.waitForFunction("cloudAuthState==='signed-in'&&!cloudRestorePending");
+  assert.equal(calls.length,1);assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+ });
+ await test('explicit signout is retained on reopen and cannot be undone by an in-flight refresh',async()=>{
+  let release;const gated=new Promise(r=>release=r);
+  const {c,p}=await authPage({expired:true,token:async route=>{await gated;return route.fulfill({json:{access_token:'fixture-new-access',refresh_token:'fixture-new-refresh',expires_in:3600,sub:'fixture-user'}})}});
+  await p.waitForFunction('!!cloudSessionPending');const before=await p.evaluate('localStorage.getItem(STORE)');
+  await p.evaluate(()=>cloudSignOut());release();await p.waitForFunction('!cloudRestorePending');
+  assert.equal(await p.evaluate('cloudSession'),null);assert.equal(await p.evaluate('cloudMeta.remember'),false);
+  await p.reload();await p.click('[data-nav=settings]');assert.equal(await p.locator('#cloudEmail').count(),1);
+  assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+ });
  await test('installed shell opens offline and keeps unrelated caches',async()=>{
   const {c,p}=await fresh({serviceWorkers:'allow'});
   await p.evaluate(async()=>{await navigator.serviceWorker.ready;await caches.open('unrelated-fixture-cache')});
@@ -61,7 +166,7 @@ async function main(){
   assert.equal(server.listening,false);
   await p.reload({waitUntil:'commit'});
   await p.waitForFunction(()=>typeof APP_VERSION!=='undefined'&&!!document.querySelector('#daily')&&window.beforeOfflineReload===undefined);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.10.1');
+  assert.equal(await p.evaluate('APP_VERSION'),'0.10.2');
   assert.equal(await p.locator('#daily').count(),1);
   assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));
   await c.close();

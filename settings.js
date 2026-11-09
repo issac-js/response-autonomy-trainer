@@ -21,4 +21,5 @@ function renderSettings(){
  };
  document.getElementById('reset').onclick=()=>{if(storageFault){alert('请先导出原文并导入有效备份恢复。');return}if(confirm('删除当前记录？请先导出备份。')&&confirm('确认已保留需要的备份？')){data=defaultData();if(save()){unsavedClear();practiceClear();if(typeof communicationClear==='function')communicationClear();try{localStorage.removeItem(GENERATED_KEY)}catch(e){}dialogueClear();dialogueState=null;stopVoice();render()}}};
  renderCloudPanel();
+ if(cloudMeta.remember)restoreCloudSession(false);
 }
