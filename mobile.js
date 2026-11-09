@@ -42,14 +42,14 @@ function practiceLeave(){
  practiceRemember();setPage('home');
 }
 function mobileRefresh(){
- const active=(page==='play'&&!!current)||(page==='dialogue'&&!!dialogueState&&!dialogueState.finished)||(page==='coach'&&!!data.coach.draft);
+ const active=page==='communication'||(page==='play'&&!!current)||(page==='dialogue'&&!!dialogueState&&!dialogueState.finished)||(page==='coach'&&!!data.coach.draft);
  document.body.classList.toggle('in-practice',active);
  const bar=document.getElementById('practiceBar');bar.hidden=!active;
- document.getElementById('practiceStep').textContent=page==='play'?`回应 → 策略 → 自评 · ${phase==='own'?'1':phase==='pick'?'2':'3'}/3`:page==='dialogue'?`多轮模拟 · 第${(dialogueState?.turn||0)+1}轮`:'三轮自主回应练习';
+ document.getElementById('practiceStep').textContent=page==='play'?`回应 → 策略 → 自评 · ${phase==='own'?'1':phase==='pick'?'2':'3'}/3`:page==='dialogue'?`多轮模拟 · 第${(dialogueState?.turn||0)+1}轮`:page==='communication'?'理解 → 回应 → 变式 → 实践':'三轮自主回应练习';
  const resume=document.getElementById('practiceResume'),saved=practiceRead();
  if(resume&&saved&&!resume.firstChild){const button=document.createElement('button');button.className='secondary';button.textContent='继续上次卡片练习';button.onclick=practiceResume;resume.appendChild(button)}
  // Fixed controls reserve their measured height, including text enlargement.
- const actions=root.querySelector('.grade-actions')||root.querySelector('#commitSingle, #commitReply, #coachCommit, #dialogueNext, #coachFinish')?.closest('.actions');
+ const actions=root.querySelector('.grade-actions')||root.querySelector('#commitSingle, #commitReply, #coachCommit, #dialogueNext, #coachFinish, #communicationCommit, #communicationTransfer')?.closest('.actions');
  root.querySelectorAll('.mobile-actions').forEach(el=>{if(el!==actions)el.classList.remove('mobile-actions')});
  if(actions)actions.classList.add('mobile-actions');
  const fixed=actions&&getComputedStyle(actions).position==='fixed';
@@ -88,7 +88,7 @@ document.addEventListener('input',()=>{practiceEnable();queueMicrotask(practiceR
 window.addEventListener('pagehide',practiceRemember);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')practiceRemember()});
 window.addEventListener('resize',mobileRefresh);window.visualViewport?.addEventListener('resize',mobileRefresh);
-new MutationObserver(()=>{mobileRefresh();if(document.body.classList.contains('in-practice')){window.scrollTo(0,0);const heading=root.querySelector('h2');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}}}).observe(root,{childList:true});
+new MutationObserver(()=>{mobileRefresh();if(document.body.classList.contains('in-practice')){window.scrollTo(0,0);const heading=root.querySelector('[data-practice-focus]')||root.querySelector('h2');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});if(heading.hasAttribute('data-practice-focus'))heading.scrollIntoView({block:'start'})}}}).observe(root,{childList:true});
 const actionObserver=new ResizeObserver(()=>{const actions=root.querySelector('.mobile-actions');if(actions&&getComputedStyle(actions).position==='fixed')document.documentElement.style.setProperty('--action-clearance',Math.ceil(actions.getBoundingClientRect().height+24)+'px')});
 new MutationObserver(()=>{actionObserver.disconnect();const actions=root.querySelector('.mobile-actions');if(actions)actionObserver.observe(actions)}).observe(root,{childList:true});
 document.getElementById('practiceBack').onclick=practiceLeave;

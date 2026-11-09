@@ -26,3 +26,5 @@
  .notice{padding:8px 10px}
  .hero p{display:none}
 }
+
+[data-practice-focus]{scroll-margin-top:110px}

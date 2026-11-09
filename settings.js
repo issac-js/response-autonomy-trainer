@@ -15,10 +15,10 @@ function renderSettings(){
    if(f.size>20*1024*1024)throw Error('备份超过20MB，未读取或替换记录');
    const obj=validateData(JSON.parse(await f.text()));
    if(!confirm(`备份含 ${Object.keys(obj.cards).length} 张已接触卡、${obj.history.length} 条单轮记录、${obj.dialogueHistory.length} 次多轮模拟、${obj.coach.runs.length} 次自主回应复盘及 ${obj.coach.experiments.length} 条真实练习计划。导入将替换当前记录，并保留导入前快照。继续吗？`))return;
-   stopVoice();const snapshot=restoreBackup(obj);unsavedClear();practiceClear();dialogueClear();dialogueState=null;current=null;renderSettings();document.getElementById('importStatus').textContent=snapshot==='saved'?'备份已恢复，导入前快照已保留。':snapshot==='none'?'备份已恢复。此前没有本地记录，因此没有生成导入前快照。':'备份已恢复；本地空间不足，未能保存导入前快照，请立即导出当前备份。';
+   stopVoice();const snapshot=restoreBackup(obj);unsavedClear();practiceClear();if(typeof communicationClear==='function')communicationClear();dialogueClear();dialogueState=null;current=null;renderSettings();document.getElementById('importStatus').textContent=snapshot==='saved'?'备份已恢复，导入前快照已保留。':snapshot==='none'?'备份已恢复。此前没有本地记录，因此没有生成导入前快照。':'备份已恢复；本地空间不足，未能保存导入前快照，请立即导出当前备份。';
   }catch(err){document.getElementById('importStatus').textContent='导入失败，原记录未替换：'+err.message}
   finally{e.target.value=''}
  };
- document.getElementById('reset').onclick=()=>{if(storageFault){alert('请先导出原文并导入有效备份恢复。');return}if(confirm('删除当前记录？请先导出备份。')&&confirm('确认已保留需要的备份？')){data=defaultData();if(save()){unsavedClear();practiceClear();try{localStorage.removeItem(GENERATED_KEY)}catch(e){}dialogueClear();dialogueState=null;stopVoice();render()}}};
+ document.getElementById('reset').onclick=()=>{if(storageFault){alert('请先导出原文并导入有效备份恢复。');return}if(confirm('删除当前记录？请先导出备份。')&&confirm('确认已保留需要的备份？')){data=defaultData();if(save()){unsavedClear();practiceClear();if(typeof communicationClear==='function')communicationClear();try{localStorage.removeItem(GENERATED_KEY)}catch(e){}dialogueClear();dialogueState=null;stopVoice();render()}}};
  renderCloudPanel();
 }

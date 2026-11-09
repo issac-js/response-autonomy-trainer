@@ -82,7 +82,7 @@ window.addEventListener('beforeunload',e=>{
  const button=document.getElementById('unsavedClear');
  if(button)button.onclick=()=>{
   const status=document.getElementById('unsavedStatus'),box=document.getElementById('unsavedNotice');
-  unsavedClear();if(typeof practiceClear==='function')practiceClear();
+  unsavedClear();if(typeof communicationClear==='function')communicationClear();if(typeof practiceClear==='function')practiceClear();
   if(status)status.textContent='临时草稿已清除；页面中已输入的内容不会被改写。';
   if(box){box.hidden=false;setTimeout(unsavedNotice,3000)}
  };
