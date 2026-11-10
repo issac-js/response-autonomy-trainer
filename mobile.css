@@ -33,6 +33,9 @@
 .learning-keynote p{margin:4px 0 0;font-weight:400}
 .learning-label{display:block;font-weight:700;font-size:14px;color:#51318f}
 .learning-memory{color:#51318f;font-weight:600}
+/* Long unbreakable tokens (URLs, latin payloads) must wrap instead of widening the page. */
+.learning-memory,.learning-copy,.learning-keynote p{overflow-wrap:anywhere}
+
 .learning-copy{font-weight:400;line-height:1.85}
 .learning-copy strong{color:#51318f;font-weight:750}
 .learning-caution{border-left:3px solid #9d6e22;background:#fff8e9;color:#69440d;padding:10px 12px;border-radius:8px;font-weight:400}
