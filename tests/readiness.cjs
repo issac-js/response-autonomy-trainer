@@ -37,7 +37,7 @@ async function main(){
  await test('background sync defers adopting remote data during active recall',async()=>{const {c,p}=await fresh();await mockedSync(p);await p.evaluate(async()=>{save();await cloudBase(data,'fixture-user');const remote={revision:data.revision+1,payload:{...data,revision:data.revision+1,writes:{cloud:'云端新内容'}}};cloudPull=async()=>remote;start('single',['RA-001']);await cloudSync(false)});assert.equal(await p.locator('#reply').count(),1);assert.match(await p.evaluate('cloudFlash'),/保留当前练习/);await c.close()});
  await test('switching accounts never automatically uploads the previous account snapshot',async()=>{const {c,p}=await fresh();await mockedSync(p);await p.evaluate(async()=>{cloudMeta.owner='other-user';cloudPull=async()=>{throw Error('must not pull')};await cloudSync(true)});assert.match(await p.evaluate('cloudFlash'),/内容不同/);await c.close()});
  await test('expired input controls do not reactivate keyboard layout',async()=>{const {c,p}=await fresh();await p.click('[data-nav=settings]');await p.check('#timer');assert.equal(await p.evaluate("document.body.classList.contains('keyboard-open')"),false);await c.close()});
- await test('six communication lessons require independent recall and a changed-condition reply without learning writes',async()=>{const {c,p}=await fresh();const before=await p.evaluate('localStorage.getItem(STORE)');for(const id of await p.evaluate('COMMUNICATION_LESSONS.map(x=>x.id)')){await p.evaluate(id=>{communicationLesson=id;setPage('communication')},id);assert.equal(await p.locator('.quote-reply').count(),0);assert.equal(await p.locator('#communicationCommit').isDisabled(),true);await p.fill('#communicationOwn','第一轮：我先听清需要');await p.click('#communicationCommit');assert.equal(await p.locator('#communicationVariant').count(),1);assert.equal(await p.inputValue('#communicationOwn'),'');await p.fill('#communicationOwn','第二轮：条件变化，调整顺序');await p.click('#communicationCommit');assert.equal(await p.locator('#communicationTransfer').count(),1);await p.click('#communicationAgain');assert.equal(await p.inputValue('#communicationOwn'),'');assert.equal(await p.locator('#communicationVariant').count(),1)}assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close()});
+ await test('all communication lessons require independent recall and a changed-condition reply without learning writes',async()=>{const {c,p}=await fresh();const before=await p.evaluate('localStorage.getItem(STORE)');for(const id of await p.evaluate('COMMUNICATION_LESSONS.map(x=>x.id)')){await p.evaluate(id=>{communicationLesson=id;setPage('communication')},id);assert.equal(await p.locator('.quote-reply').count(),0);assert.equal(await p.locator('#communicationCommit').isDisabled(),true);await p.fill('#communicationOwn','第一轮：我先听清需要');await p.click('#communicationCommit');assert.equal(await p.locator('#communicationVariant').count(),1);assert.equal(await p.inputValue('#communicationOwn'),'');await p.fill('#communicationOwn','第二轮：条件变化，调整顺序');await p.click('#communicationCommit');assert.equal(await p.locator('#communicationTransfer').count(),1);await p.click('#communicationAgain');assert.equal(await p.inputValue('#communicationOwn'),'');assert.equal(await p.locator('#communicationVariant').count(),1)}assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close()});
  await test('communication session resumes and user text stays escaped',async()=>{const {c,p}=await fresh();await p.click('[data-nav=communication]');await p.selectOption('#communicationLesson','coordinate');await p.fill('#communicationOwn','<img src=x onerror=window.injected=1>');await p.click('#communicationCommit');await p.reload();await p.click('[data-nav=communication]');assert.equal(await p.locator('#communicationVariant').count(),1);assert.equal(await p.locator('.quote-reply').textContent(),'<img src=x onerror=window.injected=1>');assert.equal(await p.locator('#root img').count(),0);assert.equal(await p.evaluate('window.injected'),undefined);await p.selectOption('#communicationLesson','observe');await p.reload();await p.click('[data-nav=communication]');assert.equal(await p.inputValue('#communicationLesson'),'observe');await c.close()});
  await test('real-plan handoff preserves an existing private draft and requires explicit saving',async()=>{const {c,p}=await fresh();await p.evaluate(()=>{coachPane='real';setPage('coach')});await p.fill('#realContext','已有真实情境草稿');await p.click('[data-nav=communication]');for(let i=0;i<2;i++){await p.fill('#communicationOwn','合成独立回应');await p.click('#communicationCommit')}await p.click('#communicationTransfer');assert.equal(await p.inputValue('#realContext'),'已有真实情境草稿');assert.equal(await p.evaluate('data.coach.experiments.length'),0);await p.fill('#realPrediction','我的具体预测');await p.fill('#realAction','只试一次先复述');await p.click('#realPlan');assert.equal(await p.evaluate('data.coach.experiments[0].context'),'已有真实情境草稿');await c.close()});
  await test('clearing temporary drafts also clears communication progress',async()=>{const {c,p}=await fresh();await p.click('[data-nav=communication]');await p.fill('#communicationOwn','清除这段未提交原话');await p.click('#practiceBack');await p.locator('#unsavedNotice summary').click();await p.click('#unsavedClear');assert.equal(await p.evaluate('sessionStorage.getItem(COMMUNICATION_KEY)'),null);await p.reload();await p.click('[data-nav=communication]');assert.equal(await p.inputValue('#communicationOwn'),'');await c.close()});
@@ -50,7 +50,7 @@ async function main(){
  await test('batch generation validates every item and caches model discovery across requests',async()=>{const {c,p}=await fresh();const result=await p.evaluate(async()=>{let lists=0,requests=0;loadCloudSdk=async()=>({llm:{models:{list:async()=>{lists++;return [{id:'fixture-model'}]}}}});collectWithFallback=async()=>{requests++;return {text:JSON.stringify({cases:Array.from({length:3},(_,i)=>({...CARDS[53],question:'合成问题第'+i+'条'}))})}};const cards=await aiGenerateBatch('高难',3);genLast=0;collectWithFallback=async()=>{requests++;return {text:JSON.stringify(CARDS[53])}};await aiGenerateCase('高难');return {lists,requests,ids:cards.map(c=>c.id)}});assert.equal(result.lists,1);assert.equal(result.requests,2);assert.equal(new Set(result.ids).size,3);await c.close()});
  await test('invalid prepared batches never enter the queue',async()=>{const {c,p}=await fresh();await p.evaluate(()=>{putPrepared({...CARDS[0],id:'RA-900',generated:true,level:'高难'});loadCloudSdk=async()=>({llm:{models:{list:async()=>[{id:'fixture'}]}}});collectWithFallback=async()=>({text:JSON.stringify({cases:[CARDS[53],{bad:true},CARDS[53]]})})});await assert.rejects(()=>p.evaluate(()=>aiGenerateBatch('高难',3)));assert.equal(await p.evaluate('preparedRead().length'),1);assert.equal(await p.evaluate('generationInFlight'),false);await c.close()});
  await test('completed dialogue guides consolidation without turning script scores into mastery',async()=>{const {c,p}=await fresh();await p.evaluate(()=>{unsavedSet({g:'coachReal',o:'',n:'',f:'realContext'},'已有现实计划草稿');startDialogue('DL-05')});for(let i=0;i<3;i++){await p.fill('#dialogueOwn','先问具体是哪件事');await p.click('#commitReply');await p.click('[data-dialogue-choice="1"]');await p.click('#dialogueNext')}assert.equal(await p.evaluate('data.dialogueHistory.length'),1);const summary=p.getByText('查看脚本选择与自评记录（不代表现实能力）',{exact:true});assert.equal(await summary.locator('..').getAttribute('open'),null);assert.match(await p.locator('#root').innerText(),/理解 → 说出 → 变式 → 实践/);assert.equal(await p.locator('#dialogueVariant').count(),1);await p.click('#dialogueTransfer');assert.equal(await p.inputValue('#realContext'),'已有现实计划草稿');assert.equal(await p.evaluate('data.coach.experiments.length'),0);assert.equal(await p.evaluate('data.dialogueHistory.length'),1);await c.close()});
- await test('all twelve communication variants reveal causal guides after recall and preserve original wording',async()=>{
+ await test('all communication variants reveal causal guides after recall and preserve original wording',async()=>{
   const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');
   const lessons=await p.evaluate('COMMUNICATION_LESSONS.map(x=>({id:x.id,variants:x.variants.map(v=>v[0])}))');
   for(const lesson of lessons)for(const variant of lesson.variants){
@@ -164,7 +164,7 @@ async function main(){
   assert.equal(await p.locator('#quickFeedback ol li').count(),3);await p.evaluate(()=>{quickNext();quickNext()});assert.equal(await p.evaluate('quickState.step'),1);
   assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
- await test('all 18 quick questions give answers and explanations without scheduling a review',async()=>{
+ await test('all 27 quick questions give answers and explanations without scheduling a review',async()=>{
   const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#quickHome');
   const ids=await p.evaluate('QUICK_BANK.map(q=>q.id)');for(const id of ids){
    await p.evaluate(id=>quickStart([id]),id);const picks=await p.evaluate(id=>quickQuestion(id).correct,id);
@@ -204,6 +204,31 @@ async function main(){
   for(const size of [{width:320,height:568},{width:844,height:390}]){await p.setViewportSize(size);await p.addStyleTag({content:'body,button{font-size:20px}'});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.ok(await p.locator('#quickNext').isVisible())}
   await p.screenshot({path:path.join(outDir,'quick-landscape-dark.png'),fullPage:false});await c.close();
  });
+ await test('four principle reminders link to exercises while preserving existing independent wording',async()=>{
+  const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('[data-nav=communication]');
+  await p.fill('#communicationOwn','这句原话要保留');await p.locator('#communicationPrinciples summary').click();assert.equal(await p.locator('[data-principle]').count(),4);
+  for(const topic of ['brief','silence','agency','coordinate']){
+   await p.click(`[data-principle="${topic}"]`);assert.equal(await p.inputValue('#communicationLesson'),topic);assert.equal(await p.locator('#communicationGuide').count(),0);
+   await p.locator('#communicationPrinciples summary').click();
+  }
+  await p.selectOption('#communicationLesson','observe');assert.equal(await p.inputValue('#communicationOwn'),'这句原话要保留');
+  await p.reload();await p.click('[data-nav=communication]');assert.equal(await p.inputValue('#communicationOwn'),'这句原话要保留');
+  assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+ });
+ await test('new principle themes offer all three quick kinds and retain first-choice history only in tab storage',async()=>{
+  const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#quickHome');
+  for(const topic of ['brief','silence','agency']){
+   await p.selectOption('#quickTopic',topic);await p.click('#quickStart');
+   assert.equal(await p.evaluate('quickState.ids.length'),3);assert.deepEqual((await p.evaluate('quickState.ids.map(id=>quickQuestion(id).kind)')).sort(),['boolean','multi','single']);
+   for(let i=0;i<3;i++){
+    assert.equal(await p.locator('#quickFeedback').count(),0);const picks=await p.evaluate('quickQuestion(quickState.ids[quickState.step]).correct');
+    for(const n of picks)await p.click(`[data-quick-choice="${n}"]`);await p.click('#quickSubmit');assert.equal(await p.evaluate('quickState.answers.length'),i+1);
+    await p.click('#quickNext');
+   }
+   assert.match(await p.locator('#root').textContent(),/3\/3 题与参考答案一致/);await p.click('#quickClearRound');
+  }
+  assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);assert.equal(await p.evaluate('data.history.length'),0);await c.close();
+ });
  await test('installed shell opens offline and keeps unrelated caches',async()=>{
   const {c,p}=await fresh({serviceWorkers:'allow'});
   await p.evaluate(async()=>{await navigator.serviceWorker.ready;await caches.open('unrelated-fixture-cache')});
@@ -215,7 +240,7 @@ async function main(){
   assert.equal(server.listening,false);
   await p.reload({waitUntil:'commit'});
   await p.waitForFunction(()=>typeof APP_VERSION!=='undefined'&&!!document.querySelector('#daily')&&window.beforeOfflineReload===undefined);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.11.0');
+  assert.equal(await p.evaluate('APP_VERSION'),'0.12.0');
   assert.equal(await p.locator('#daily').count(),1);
   assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));
   await c.close();
