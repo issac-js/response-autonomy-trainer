@@ -155,6 +155,55 @@ async function main(){
   await p.reload();await p.click('[data-nav=settings]');assert.equal(await p.locator('#cloudEmail').count(),1);
   assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
+ await test('quick practice is available from home and keeps answers hidden until one explicit submission',async()=>{
+  const {c,p}=await fresh();const before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#quickHome');
+  await p.click('#quickStart');assert.equal(await p.locator('#quickFeedback').count(),0);assert.equal(await p.locator('#quickSubmit').isDisabled(),true);
+  const kinds=await p.evaluate('quickState.ids.map(id=>quickQuestion(id).kind)');for(const kind of ['single','multi','boolean'])assert.equal(kinds.filter(k=>k===kind).length,2);
+  const n=await p.evaluate('quickQuestion(quickState.ids[0]).correct[0]');await p.click(`[data-quick-choice="${n}"]`);await p.click('#quickSubmit');
+  await p.evaluate(()=>quickSubmit());assert.equal(await p.evaluate('quickState.answers.length'),1);assert.equal(await p.locator('#quickFeedback').count(),1);
+  assert.equal(await p.locator('#quickFeedback ol li').count(),3);await p.evaluate(()=>{quickNext();quickNext()});assert.equal(await p.evaluate('quickState.step'),1);
+  assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+ });
+ await test('all 18 quick questions give answers and explanations without scheduling a review',async()=>{
+  const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#quickHome');
+  const ids=await p.evaluate('QUICK_BANK.map(q=>q.id)');for(const id of ids){
+   await p.evaluate(id=>quickStart([id]),id);const picks=await p.evaluate(id=>quickQuestion(id).correct,id);
+   for(const n of picks)await p.click(`[data-quick-choice="${n}"]`);await p.click('#quickSubmit');
+   assert.equal(await p.locator('#quickFeedback').count(),1);assert.equal(await p.locator('.quick-choice:not(:disabled)').count(),0);
+   await p.click('#quickNext');assert.match(await p.locator('#root').textContent(),/1\/1 题与参考答案一致/);
+  }
+  assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);assert.equal(await p.evaluate('data.history.length'),0);await c.close();
+ });
+ await test('partial and extra multi-choice answers fail and wrong-question retry starts a distinct round',async()=>{
+  const {c,p}=await fresh();await p.click('#quickHome');await p.evaluate(()=>quickStart(['Q11']));
+  await p.click('[data-quick-choice="0"]');await p.click('#quickSubmit');await p.click('#quickNext');assert.match(await p.locator('#root').textContent(),/0\/1 题与参考答案一致/);
+  await p.click('#quickRetry');assert.equal(await p.evaluate('quickState.answers.length'),0);for(const n of [0,1,2,3])await p.click(`[data-quick-choice="${n}"]`);
+  await p.click('#quickSubmit');await p.click('#quickNext');assert.match(await p.locator('#root').textContent(),/0\/1 题与参考答案一致/);
+  await p.click('#quickRetry');for(const n of [0,1,3])await p.click(`[data-quick-choice="${n}"]`);await p.click('#quickSubmit');await p.click('#quickNext');assert.match(await p.locator('#root').textContent(),/1\/1 题与参考答案一致/);await c.close();
+ });
+ await test('quick selections and locked first answers survive reload, with single-choice replacement and keyboard submission',async()=>{
+  const {c,p}=await fresh();await p.click('#quickHome');await p.evaluate(()=>quickStart(['Q01','Q03']));
+  await p.click('[data-quick-choice="0"]');await p.click('[data-quick-choice="1"]');assert.deepEqual(await p.evaluate('quickState.selected'),[1]);
+  const id=await p.evaluate('quickState.ids[0]');await p.reload();await p.click('#quickHome');assert.equal(await p.evaluate('quickState.ids[0]'),id);assert.deepEqual(await p.evaluate('quickState.selected'),[1]);
+  await p.locator('#quickSubmit').focus();await p.locator('#quickSubmit').press('Enter');await p.reload();await p.click('#quickHome');
+  assert.equal(await p.locator('#quickFeedback').count(),1);assert.equal(await p.evaluate('quickState.answers.length'),1);assert.equal(await p.locator('.quick-choice:not(:disabled)').count(),0);
+  await p.click('#quickClearRound');assert.equal(await p.evaluate('sessionStorage.getItem(QUICK_KEY)'),null);assert.equal(await p.locator('#quickStart').count(),1);await c.close();
+ });
+ await test('quick topic filters and reading links preserve the independent-response exercise',async()=>{
+  const {c,p}=await fresh();await p.click('#quickHome');await p.selectOption('#quickTopic','privacy');await p.selectOption('#quickKind','boolean');await p.click('#quickStart');
+  assert.deepEqual(await p.evaluate('quickState.ids'),['Q12']);await p.click('[data-quick-choice="1"]');await p.click('#quickSubmit');
+  await p.click('#quickLearn');assert.equal(await p.inputValue('#communicationLesson'),'privacy');assert.equal(await p.locator('#communicationGuide').count(),0);
+  await p.click('#practiceBack');await p.click('#quickHome');assert.equal(await p.locator('#quickFeedback').count(),1);await c.close();
+ });
+ await test('plain-language highlights remain selective, escaped and readable on small and dark screens',async()=>{
+  const {c,p}=await fresh();await p.evaluate(()=>{communicationLesson='observe';communicationProgress.observe={stage:2,answers:['自己的第一句','自己的第二句'],variant:'urgent'};setPage('communication')});
+  await p.locator('#communicationGuide summary').click();assert.ok(await p.locator('#communicationGuide p strong').count());assert.ok((await p.locator('#communicationGuide p').allTextContents()).some(t=>t.includes('截止')));
+  await p.evaluate(()=>{COMMUNICATION_GUIDES.observe.memory='**<img src=x onerror=window.bad=true>**';renderCommunication()});assert.equal(await p.locator('#root img').count(),0);assert.equal(await p.evaluate('window.bad'),undefined);
+  await p.emulateMedia({colorScheme:'dark'});await p.screenshot({path:path.join(outDir,'plain-guide-dark.png'),fullPage:true});
+  await p.evaluate(()=>{setPage('quick');quickStart(['Q02'])});await p.click('[data-quick-choice="0"]');await p.click('#quickSubmit');
+  for(const size of [{width:320,height:568},{width:844,height:390}]){await p.setViewportSize(size);await p.addStyleTag({content:'body,button{font-size:20px}'});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.ok(await p.locator('#quickNext').isVisible())}
+  await p.screenshot({path:path.join(outDir,'quick-landscape-dark.png'),fullPage:false});await c.close();
+ });
  await test('installed shell opens offline and keeps unrelated caches',async()=>{
   const {c,p}=await fresh({serviceWorkers:'allow'});
   await p.evaluate(async()=>{await navigator.serviceWorker.ready;await caches.open('unrelated-fixture-cache')});
@@ -166,7 +215,7 @@ async function main(){
   assert.equal(server.listening,false);
   await p.reload({waitUntil:'commit'});
   await p.waitForFunction(()=>typeof APP_VERSION!=='undefined'&&!!document.querySelector('#daily')&&window.beforeOfflineReload===undefined);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.10.2');
+  assert.equal(await p.evaluate('APP_VERSION'),'0.11.0');
   assert.equal(await p.locator('#daily').count(),1);
   assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));
   await c.close();

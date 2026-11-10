@@ -28,3 +28,23 @@
 }
 
 [data-practice-focus]{scroll-margin-top:110px}
+/* Important points stay readable through labels as well as color. */
+.learning-keynote{border-left:4px solid #6845a5;background:#f4f0fc;border-radius:10px;padding:12px 14px;margin:16px 0;color:#38225e}
+.learning-keynote p{margin:4px 0 0;font-weight:400}
+.learning-label{display:block;font-weight:700;font-size:14px;color:#51318f}
+.learning-memory{color:#51318f;font-weight:600}
+.learning-copy{font-weight:400;line-height:1.85}
+.learning-copy strong{color:#51318f;font-weight:750}
+.learning-caution{border-left:3px solid #9d6e22;background:#fff8e9;color:#69440d;padding:10px 12px;border-radius:8px;font-weight:400}
+.quick-panel h3{overflow-wrap:anywhere}
+.quick-selected{border:2px solid var(--purple);background:var(--pale);box-shadow:inset 0 0 0 1px var(--purple)}
+.quick-choice{text-align:left;white-space:normal;font-weight:500}
+.quick-choice:disabled{opacity:1;color:inherit}
+.quick-choice-note{display:block;font-size:14px;font-weight:700;margin-top:5px;color:#51318f}
+.quick-reasoning li{padding:5px 0;line-height:1.75}
+@media(prefers-color-scheme:dark){
+ .learning-keynote{background:#30213f;color:#f0e8ff;border-color:#b99ae8}
+ .learning-label,.learning-memory,.learning-copy strong,.quick-choice-note{color:#dec5ff}
+ .learning-caution{background:#352b19;color:#f3d69c;border-color:#cbaa65}
+ .quick-selected{background:#30213f;border-color:#b99ae8;box-shadow:inset 0 0 0 1px #b99ae8}
+}

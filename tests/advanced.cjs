@@ -39,7 +39,7 @@ async function main(){
   await p.click('[data-choice=skip]');
   const text=await p.locator('#root').innerText();
   assert.match(text,/已跳过分类/);
-  assert.match(text,/结构要点/);
+  assert.match(text,/这题记住什么/);
   assert.match(text,/查看一种示范表达/);
   await p.click('[data-rate=good]');
   assert.equal(await p.evaluate('data.history[0].selected'),'skip');

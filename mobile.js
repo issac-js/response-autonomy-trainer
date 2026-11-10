@@ -42,14 +42,14 @@ function practiceLeave(){
  practiceRemember();setPage('home');
 }
 function mobileRefresh(){
- const active=page==='communication'||(page==='play'&&!!current)||(page==='dialogue'&&!!dialogueState&&!dialogueState.finished)||(page==='coach'&&!!data.coach.draft);
+ const active=page==='quick'||page==='communication'||(page==='play'&&!!current)||(page==='dialogue'&&!!dialogueState&&!dialogueState.finished)||(page==='coach'&&!!data.coach.draft);
  document.body.classList.toggle('in-practice',active);
  const bar=document.getElementById('practiceBar');bar.hidden=!active;
- document.getElementById('practiceStep').textContent=page==='play'?`回应 → 策略 → 自评 · ${phase==='own'?'1':phase==='pick'?'2':'3'}/3`:page==='dialogue'?`多轮模拟 · 第${(dialogueState?.turn||0)+1}轮`:page==='communication'?'理解 → 回应 → 变式 → 实践':'三轮自主回应练习';
+ document.getElementById('practiceStep').textContent=page==='play'?`回应 → 策略 → 自评 · ${phase==='own'?'1':phase==='pick'?'2':'3'}/3`:page==='dialogue'?`多轮模拟 · 第${(dialogueState?.turn||0)+1}轮`:page==='quick'?'快练 · 看情境 → 选择 → 看懂':page==='communication'?'理解 → 回应 → 变式 → 实践':'三轮自主回应练习';
  const resume=document.getElementById('practiceResume'),saved=practiceRead();
  if(resume&&saved&&!resume.firstChild){const button=document.createElement('button');button.className='secondary';button.textContent='继续上次卡片练习';button.onclick=practiceResume;resume.appendChild(button)}
  // Fixed controls reserve their measured height, including text enlargement.
- const actions=root.querySelector('.grade-actions')||root.querySelector('#commitSingle, #commitReply, #coachCommit, #dialogueNext, #coachFinish, #communicationCommit, #communicationTransfer')?.closest('.actions');
+ const actions=root.querySelector('.grade-actions')||root.querySelector('#commitSingle, #commitReply, #coachCommit, #dialogueNext, #coachFinish, #communicationCommit, #communicationTransfer, #quickSubmit, #quickNext')?.closest('.actions');
  root.querySelectorAll('.mobile-actions').forEach(el=>{if(el!==actions)el.classList.remove('mobile-actions')});
  if(actions)actions.classList.add('mobile-actions');
  const fixed=actions&&getComputedStyle(actions).position==='fixed';

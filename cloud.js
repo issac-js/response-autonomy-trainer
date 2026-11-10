@@ -112,7 +112,7 @@ async function cloudHash(value){
  return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
 }
 function cloudUnchanged(snapshot,raw){return cloudSnapshot()===snapshot&&localStorage.getItem(STORE)===raw}
-function cloudPracticeActive(){return unsavedDirty()||page==='play'||(!!dialogueState&&!dialogueState.finished)||!!data.coach.draft}
+function cloudPracticeActive(){return unsavedDirty()||page==='play'||page==='quick'||(!!dialogueState&&!dialogueState.finished)||!!data.coach.draft}
 async function cloudBase(payload,owner){
  cloudMeta.base=payload.revision||0;cloudMeta.baseHash=await cloudHash(payload);cloudMeta.owner=owner;
  cloudMeta.lastSync=new Date().toISOString();cloudMeta.enabled=true;cloudMetaWrite();

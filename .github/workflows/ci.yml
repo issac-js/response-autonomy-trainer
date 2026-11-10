@@ -24,6 +24,8 @@ jobs:
         run: node tests/core.cjs
       - name: Storage and rollback semantics
         run: node tests/regression.cjs
+      - name: Quick practice bank and temporary progress contracts
+        run: node tests/quick-core.cjs
       - name: Rebuild is byte-identical to the committed single file
         run: |
           python rebuild.py
