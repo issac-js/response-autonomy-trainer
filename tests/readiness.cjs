@@ -201,7 +201,27 @@ async function main(){
   await p.evaluate(()=>{COMMUNICATION_GUIDES.observe.memory='**<img src=x onerror=window.bad=true>**';renderCommunication()});assert.equal(await p.locator('#root img').count(),0);assert.equal(await p.evaluate('window.bad'),undefined);
   await p.emulateMedia({colorScheme:'dark'});await p.screenshot({path:path.join(outDir,'plain-guide-dark.png'),fullPage:true});
   await p.evaluate(()=>{setPage('quick');quickStart(['Q02'])});await p.click('[data-quick-choice="0"]');await p.click('#quickSubmit');
-  for(const size of [{width:320,height:568},{width:844,height:390}]){await p.setViewportSize(size);await p.addStyleTag({content:'body,button{font-size:20px}'});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.ok(await p.locator('#quickNext').isVisible())}
+  for(const size of [{width:320,height:568},{width:844,height:390}]){
+   await p.setViewportSize(size);await p.addStyleTag({content:'body,button{font-size:20px}'});
+   if(size.width===320){
+    const offend = await p.evaluate(() => {
+     const vw = innerWidth, out = [];
+     document.querySelectorAll('#root *').forEach(el => {
+      const b = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      if (b.width > 0 && b.right > vw + 0.5) out.push({
+       tag: el.tagName.toLowerCase(), cls: String(el.className || '').slice(0, 24),
+       w: Math.round(b.width), right: Math.round(b.right),
+       ws: cs.whiteSpace, mw: cs.minWidth, fx: cs.flex, ov: cs.overflowX,
+       txt: (el.textContent || '').trim().slice(0, 30)
+      });
+     });
+     return { vw, sw: document.documentElement.scrollWidth, out: out.slice(0, 8) };
+    });
+    console.log('WEBKIT_OVERFLOW ' + JSON.stringify(offend));
+   }
+   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.ok(await p.locator('#quickNext').isVisible());
+  }
   await p.screenshot({path:path.join(outDir,'quick-landscape-dark.png'),fullPage:false});await c.close();
  });
  await test('four principle reminders link to exercises while preserving existing independent wording',async()=>{
