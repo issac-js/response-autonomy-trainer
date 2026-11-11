@@ -1,5 +1,5 @@
 // Persistence and migration are independent of UI and scheduler internals.
-const STORE='response-autonomy-v01', APP_VERSION='0.14.2';
+const STORE='response-autonomy-v01', APP_VERSION='0.14.3';
 const TODAY=()=>new Date().toLocaleDateString('sv-SE');
 const defaultData=()=>({version:1,schemaVersion:3,appVersion:APP_VERSION,revision:0,created:new Date().toISOString(),settings:{newPerDay:5,timer:false,showReason:true},cards:{},history:[],writes:{},dialogueHistory:[],coach:newCoach()});
 const record=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);

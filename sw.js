@@ -1,5 +1,5 @@
 // Versioned offline shell. Never cache account, model or sync responses.
-const CACHE='response-autonomy-shell-v0.14.2';
+const CACHE='response-autonomy-shell-v0.14.3';
 const SHELL=['./','./index.html','./manifest.webmanifest','./assets/icon-180.png','./assets/icon-512.png','./vendor/workbuddy-cloud-sdk.js'];
 const STATIC=new Set(SHELL.map(path=>new URL(path,self.registration.scope).href));
 self.addEventListener('install',event=>{
