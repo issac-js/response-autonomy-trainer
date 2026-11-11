@@ -13,4 +13,10 @@ test('oversized evidence cannot match by a clipped prefix and output fields rema
 test('untrusted markup stays inert data during normalization',()=>{const quote='<img src=x onerror=bad()>';const r=normalize({...sample,strength:{quote,reason:'**<script>bad()</script>**'}},quote);assert.equal(r.strength.quote,quote);assert.equal(r.strength.reason,'**<script>bad()</script>**')});
 test('the full permitted 1500-character answer remains available to feedback',()=>{const a='甲'.repeat(1450)+'末尾原话';assert.equal(ctx.feedbackAnswer(a),a);assert.equal(normalize({...sample,strength:{quote:'末尾原话',reason:'依据'}},a).strength.quoteVerified,true)});
 test('previous reflection selects the latest matching card and avoids unrelated generated prompts',()=>{ctx.data={history:[{id:'A',reflection:'旧提醒'},{id:'B',reflection:'别题'},{id:'A',reflection:'新提醒'}]};assert.equal(ctx.previousReflectionFor({id:'A'}),'新提醒');assert.equal(ctx.previousReflectionFor({id:'C'}),'');assert.equal(ctx.previousReflectionFor({id:'A',generated:true,question:'另一题'}),'');ctx.generatedFor=h=>h.snapshot;ctx.data.history=[{id:'G',reflection:'提示',snapshot:{question:'同一句话',scene:'旧情境'}}];assert.equal(ctx.previousReflectionFor({id:'G',generated:true,question:'同一句话',scene:'新情境'}),'');assert.equal(ctx.previousReflectionFor({id:'G',generated:true,question:'同一句话',scene:'旧情境'}),'提示');});
+test('missing next is flagged for one repair and still not treated as structured feedback',()=>{
+ const bare={...sample,improvement:{quote:'',reason:'原话未说明后续安排。'}};
+ assert.equal(ctx.needsNextRepair(bare),true);
+ assert.equal(normalize(bare),null);
+ assert.equal(ctx.needsNextRepair(sample),false);
+});
 console.log(JSON.stringify({passed}));

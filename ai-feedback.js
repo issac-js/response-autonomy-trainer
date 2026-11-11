@@ -23,6 +23,10 @@ function normalizeAiFeedback(value,answer){
  }
  return null;
 }
+// 模型偶尔把 next 并入 reason：只补该字段，不放弃整条反馈。
+function needsNextRepair(o){
+ return !!(o&&typeof o==='object'&&!Array.isArray(o)&&o.improvement&&typeof o.improvement==='object'&&!Array.isArray(o.improvement)&&!String(o.improvement.next||'').trim());
+}
 function renderAiResult(out){
  const box=document.getElementById('aiOut');if(!box)return;
  if(!out||out.plain){box.innerHTML='<p>本次未返回完整的分项反馈，请自行核对。</p><details><summary>查看模型原文</summary><p>'+safe((out&&out.plain)||'').replace(/\n/g,'<br>')+'</p></details>';return}

@@ -26,7 +26,7 @@ async function main(){
 
  await test('http origin serves the self-contained app with both storages available',async()=>{
   assert.match(await p.title(),/v0\.14\.0/);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.14.1');
+  assert.equal(await p.evaluate('APP_VERSION'),'0.14.2');
   assert.equal(await p.evaluate("(()=>{try{localStorage.setItem('__probe','1');sessionStorage.setItem('__probe','1');localStorage.removeItem('__probe');sessionStorage.removeItem('__probe');return true}catch(e){return false}})()"),true);
   assert.equal(await p.evaluate('typeof crypto.randomUUID'),'function');
  });
