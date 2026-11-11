@@ -1,4 +1,4 @@
-# Response Autonomy Trainer｜沟通决策训练系统 v0.14.0
+# Response Autonomy Trainer｜沟通决策训练系统 v0.14.1
 
 本项目定位为社会情境判断与沟通训练器：同时练正常交往、协作修复与风险应对，保持真诚并提高边界与判断能力，不承诺快速消除焦虑。
 
