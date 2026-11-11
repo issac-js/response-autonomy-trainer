@@ -35,11 +35,12 @@ async function main(){
     aiLast=0; // eval paces itself instead of the UI cooldown
     return await aiAnalyze(CARDS.find(c=>c.id===id),answer);
    },{id:item.id,answer:item.answer});
-   text=raw&&raw.plain?raw.plain:['fact','boundary','length','rewrite','tip'].map(k=>raw&&raw[k]||'').join('\n');
+   text=raw&&raw.plain?raw.plain:[raw?.strength?.quote,raw?.strength?.reason,raw?.improvement?.quote,raw?.improvement?.reason,raw?.improvement?.next,raw?.rewrite,raw?.memory].filter(Boolean).join('\n');
   }catch(e){thrown=e.message}
   const ms=Date.now()-started;
-  const checks={structured:!!(raw&&raw.fact&&raw.boundary&&raw.length&&raw.rewrite),labels:raw&&raw.plain?(/事实/.test(text)&&/前提/.test(text)&&/篇幅|停顿/.test(text)&&/替换/.test(text)):true,
-   length:text.length>=80&&text.length<=320,
+  const checks={structured:!!(raw&&raw.feedbackVersion===2&&raw.rewrite&&raw.memory),
+   evidence:!!raw&&(!raw.strength||raw.strength.quoteVerified===true)&&(!raw.improvement||!raw.improvement.quote||raw.improvement.quoteVerified===true),
+   length:text.length>=20&&text.length<=1000,
    noScore:!/\d+\s*%|得分|评分：|正确率/.test(text),
    noDiagnosis:!/诊断|人格障碍|你有.*倾向/.test(text),
    keyword:item.expect.some(k=>text.includes(k))};
@@ -66,7 +67,7 @@ async function main(){
 
  await b.close();
  result.passed=result.cases.filter(c=>c.ok).length;
- result.failed=result.cases.length-result.passed;result.scope='3 representative cases (quota-conscious)';
+ result.failed=result.cases.length-result.passed;result.scope='3 representative v2 contract cases; automated checks do not establish semantic feedback quality';
  fs.writeFileSync(path.join(path.resolve(__dirname,'..'),'tests/ai-eval-results.json'),JSON.stringify(result,null,2));
  console.log(JSON.stringify({model:result.model.id,passed:result.passed,failed:result.failed,usage:result.usage,concurrency:result.concurrency}));
  if(result.failed||result.errors.length)process.exitCode=1;

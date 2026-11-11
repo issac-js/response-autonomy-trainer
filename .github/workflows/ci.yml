@@ -26,6 +26,8 @@ jobs:
         run: node tests/regression.cjs
       - name: Quick practice bank and temporary progress contracts
         run: node tests/quick-core.cjs
+      - name: AI feedback evidence and compatibility contracts
+        run: node tests/ai-feedback-core.cjs
       - name: Rebuild is byte-identical to the committed single file
         run: |
           python rebuild.py

@@ -259,6 +259,37 @@ async function main(){
   assert.match(await p.locator('#communicationGuide').textContent(),/结束重复评价/);assert.equal(await p.evaluate('communicationProgress.focus.answers[0]'),'我先核对事实，不凭一句评价下结论');
   assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);assert.equal(await p.evaluate('data.history.length'),0);await c.close();
  });
+ async function aiFeedbackFixture(p,patch={}){
+  await p.evaluate(patch=>{window.feedbackFixture={strength:{quote:'我先核对事实',reason:'没有把猜测直接当结论。'},improvement:{quote:'',reason:'原话未说明核对后的安排。',next:'需要时补充下一步。'},rewrite:'我先核对事实，有结果后再说明。',memory:'遇到含糊说法，先核对事实。',...patch};renderAiResult(normalizeAiFeedback(window.feedbackFixture,textDraft))},patch);
+ }
+ await test('AI feedback labels evidence, one improvement, example and memory without recording reviews',async()=>{
+  const {c,p}=await fresh();await toRate(p);await p.locator('.optional-review summary').first().click();
+  await aiFeedbackFixture(p);assert.equal(await p.locator('#aiOut .ai-block').count(),4);assert.match(await p.locator('#aiOut .strength').textContent(),/我先核对事实/);assert.match(await p.locator('#aiOut .improvement').textContent(),/下次只改一步/);
+  assert.equal(await p.evaluate('data.history.length'),0);assert.equal(await p.evaluate('localStorage.getItem(STORE)'),null);await c.close();
+ });
+ await test('AI memory appends only on request, keeps existing reflection, deduplicates, and saves via existing field',async()=>{
+  const {c,p}=await fresh();await toRate(p);await p.locator('.optional-review summary').first().click();await p.fill('#reflection','我原先写好的复盘');await aiFeedbackFixture(p);
+  assert.equal(await p.inputValue('#reflection'),'我原先写好的复盘');await p.click('#aiRemember');const note=await p.inputValue('#reflection');assert.ok(note.startsWith('我原先写好的复盘'));assert.ok(note.includes('AI提醒'));assert.equal(await p.evaluate('data.history.length'),0);
+  await p.click('#aiRemember');assert.equal(await p.inputValue('#reflection'),note);await p.click('[data-rate=hard]');assert.equal(await p.evaluate('data.history.length'),1);assert.equal(await p.evaluate('data.history[0].reflection'),note);assert.equal(await p.evaluate('data.history[0].answer'),'合成原话：我先核对事实');assert.equal(await p.evaluate("Object.hasOwn(data.history[0],'aiFeedback')"),false);await p.evaluate(()=>start('single',['RA-001']));assert.equal(await p.locator('#previousReflection').count(),0);await p.fill('#reply','下一次独立回应');await p.click('#commitSingle');assert.equal(await p.locator('#previousReflection').count(),0);await p.click('[data-choice=skip]');assert.equal(await p.locator('#previousReflection').getAttribute('open'),null);assert.equal(await p.locator('#previousReflection p').textContent(),note);await c.close();
+ });
+ await test('AI recall hides references, preserves the first answer and never upgrades a grade',async()=>{
+  const {c,p}=await fresh();await toRate(p);const original=await p.evaluate('textDraft');await p.locator('.optional-review summary').first().click();await aiFeedbackFixture(p);await p.locator('#cardExample summary').click();
+  await p.locator('#aiRecall summary').click();await p.waitForFunction('document.getElementById("aiReference").hidden');assert.equal(await p.locator('#cardExample').getAttribute('open'),null);await p.fill('#aiRecallOwn','我用自己的话再试一句');assert.equal(await p.evaluate('textDraft'),original);assert.equal(await p.evaluate('data.history.length'),0);
+  await p.click('#aiRecallBack');assert.equal(await p.locator('#aiReference').isVisible(),true);assert.equal(await p.inputValue('#aiRecallOwn'),'我用自己的话再试一句');await c.close();
+ });
+ await test('AI evidence mismatch, no-fault feedback and markup stay explicit without fabricating validation',async()=>{
+  const {c,p}=await fresh();await toRate(p);await p.locator('.optional-review summary').first().click();await aiFeedbackFixture(p,{strength:{quote:'不存在的原话<img src=x onerror=window.bad=1>',reason:'需要核对'},improvement:null,memory:'**<script>window.bad=1</script>**'});
+  assert.match(await p.locator('#aiOut .strength').textContent(),/未在提交的原话中找到/);assert.match(await p.locator('#aiOut .improvement').textContent(),/未指出明确不足/);assert.equal(await p.locator('#aiOut img,#aiOut script').count(),0);assert.equal(await p.evaluate('window.bad'),undefined);
+  await p.fill('#reflection','字'.repeat(990));await p.click('#aiRemember');assert.equal((await p.inputValue('#reflection')).length,990);assert.match(await p.textContent('#aiMemoryStatus'),/原内容已保留/);await c.close();
+ });
+ await test('AI analysis prompt and parser use synthetic responses without a real model request',async()=>{
+  const {c,p}=await fresh();const result=await p.evaluate(async()=>{loadCloudSdk=async()=>({llm:{models:{list:async()=>[{id:'fixture'}]}}});collectWithFallback=async(c,m,messages)=>{window.feedbackPrompt=messages[0].content;return {text:JSON.stringify({strength:null,improvement:null,rewrite:'保持按情境回应。',memory:'先看事实，再选动作。'}),model:'fixture'}};return aiAnalyze(CARDS[0],'合成回答')});assert.equal(result.feedbackVersion,2);assert.equal(result.improvement,null);assert.match(await p.evaluate('window.feedbackPrompt'),/不能确认真实停顿/);await c.close();
+ });
+ await test('new AI feedback fits small screens and a keyboard-open manual grade still saves once',async()=>{
+  const {c,p}=await fresh();await toRate(p);await p.locator('.optional-review summary').first().click();await aiFeedbackFixture(p,{rewrite:'longword'.repeat(35),memory:'记住这一点：先核对事实。'});await p.emulateMedia({colorScheme:'dark'});await p.addStyleTag({content:'body,button{font-size:20px}'});
+  for(const size of [{width:320,height:568},{width:844,height:390},{width:390,height:844}]){await p.setViewportSize(size);assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))}
+  await p.locator('#aiRecall summary').click();await p.fill('#aiRecallOwn','我自己的巩固表达');await p.click('[data-rate=hard]');assert.equal(await p.evaluate('data.history.length'),1);assert.equal(await p.evaluate('data.history[0].fsrsLog.rating'),2);assert.equal(await p.evaluate('data.history[0].answer'),'合成原话：我先核对事实');await c.close();
+ });
  await test('installed shell opens offline and keeps unrelated caches',async()=>{
   const {c,p}=await fresh({serviceWorkers:'allow'});
   await p.evaluate(async()=>{await navigator.serviceWorker.ready;await caches.open('unrelated-fixture-cache')});
@@ -270,7 +301,7 @@ async function main(){
   assert.equal(server.listening,false);
   await p.reload({waitUntil:'commit'});
   await p.waitForFunction(()=>typeof APP_VERSION!=='undefined'&&!!document.querySelector('#daily')&&window.beforeOfflineReload===undefined);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.13.0');
+  assert.equal(await p.evaluate('APP_VERSION'),'0.14.0');
   assert.equal(await p.locator('#daily').count(),1);
   assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));
   await c.close();
