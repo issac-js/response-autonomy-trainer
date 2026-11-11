@@ -31,6 +31,8 @@ function parseJsonBlock(text){
 }
 
 // 模型偶尔把 next 并入 reason：只补该字段，不放弃整条反馈。
+// 解析失败或对象不合法时也值得重问一次，而不是直接把原文丢给用户。
+function needsStructureRepair(o){return !o||needsNextRepair(o)}
 function needsNextRepair(o){
  return !!(o&&typeof o==='object'&&!Array.isArray(o)&&o.improvement&&typeof o.improvement==='object'&&!Array.isArray(o.improvement)&&!String(o.improvement.next||'').trim());
 }

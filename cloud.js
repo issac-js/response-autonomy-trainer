@@ -412,9 +412,10 @@ async function aiAnalyze(card,text){
  const o=parseJsonBlock(out);
  let parsed=normalizeAiFeedback(o,answer);
  let usedModel=got.model;
- if(!parsed&&needsNextRepair(o)){
+ if(!parsed&&needsStructureRepair(o)){
   try{
-   const repair=[{role:'system',content:AI_SYSTEM},{role:'user',content:user},{role:'assistant',content:out.slice(0,3000)},{role:'user',content:'上一次输出缺少 improvement.next 字段。请重新输出完整 JSON：把“下次只改一个动作”写进 improvement.next（不超过80字），不要并入 reason，其余内容保持不变。'}];
+   const hint=o?'上一次输出缺少 improvement.next 字段。请重新输出完整 JSON：把“下次只改一个动作”写进 improvement.next（不超过80字），不要并入 reason，其余内容保持不变。':'上一次输出不是合法的 JSON（花括号数量或字段层级有误，例如把 next 放到了 improvement 外层）。请只输出一个合法 JSON 对象：strength、improvement（含 quote、reason、next）、rewrite、memory，不要代码块或多余文字。';
+   const repair=[{role:'system',content:AI_SYSTEM},{role:'user',content:user},{role:'assistant',content:out.slice(0,3000)},{role:'user',content:hint}];
    const again=await collectWithFallback(c,models,repair,0.2);
    const o2=parseJsonBlock(again.text);
    const p2=normalizeAiFeedback(o2,answer);

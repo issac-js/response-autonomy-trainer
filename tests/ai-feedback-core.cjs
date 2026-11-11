@@ -51,4 +51,14 @@ test('a genuinely incomplete return stays unstructured and does not ask for a re
  assert.equal(normalize(cut,fixture.answer),null);
  assert.equal(ctx.needsNextRepair(cut),false);
 });
+const malformed=require('./fixtures/ai-feedback-raw-b-malformed.js');
+test('illegal braces are a parse failure that justifies one rewrite request',()=>{
+ assert.equal(ctx.parseJsonBlock(malformed.raw),null);
+ assert.equal(ctx.needsStructureRepair(null),true);
+});
+test('a complete but invalid structure is not retried just for missing fields',()=>{
+ const cut=JSON.parse(fixture.raw);
+ delete cut.rewrite; cut.improvement.next='补一句。';
+ assert.equal(ctx.needsStructureRepair(cut),false);
+});
 console.log(JSON.stringify({passed}));
