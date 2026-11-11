@@ -23,6 +23,13 @@ function normalizeAiFeedback(value,answer){
  }
  return null;
 }
+function parseJsonBlock(text){
+ const raw=String(text||'');
+ const a=raw.indexOf('{'),b=raw.lastIndexOf('}');
+ if(a<0||b<=a)return null;
+ try{const o=JSON.parse(raw.slice(a,b+1));return o&&typeof o==='object'?o:null}catch(e){return null}
+}
+
 // 模型偶尔把 next 并入 reason：只补该字段，不放弃整条反馈。
 function needsNextRepair(o){
  return !!(o&&typeof o==='object'&&!Array.isArray(o)&&o.improvement&&typeof o.improvement==='object'&&!Array.isArray(o.improvement)&&!String(o.improvement.next||'').trim());

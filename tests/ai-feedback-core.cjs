@@ -19,4 +19,36 @@ test('missing next is flagged for one repair and still not treated as structured
  assert.equal(normalize(bare),null);
  assert.equal(ctx.needsNextRepair(sample),false);
 });
+const fixture=require('./fixtures/ai-feedback-raw-b.js');
+test('realtime fixture parses and is rejected only by the missing next field',()=>{
+ const o=ctx.parseJsonBlock(fixture.raw);
+ assert.ok(o,'parseJsonBlock 应能解析真实返回');
+ assert.deepEqual(Object.keys(o.improvement).sort(),['quote','reason']);
+ assert.equal(normalize(o,fixture.answer),null);
+ assert.equal(ctx.needsNextRepair(o),true);
+ const repaired=JSON.parse(JSON.stringify(o));
+ repaired.improvement.next='先补齐负责范围与同步节点。';
+ const r=normalize(repaired,fixture.answer);
+ assert.equal(r.feedbackVersion,2);
+ assert.equal(r.strength.quoteVerified,true);
+ assert.ok(r.rewrite.length>0&&r.memory.length>0);
+});
+test('code fences and escaped quotes parse without loosening validation',()=>{
+ const fenced='```json\n'+fixture.raw+'\n```';
+ const f=ctx.parseJsonBlock(fenced);
+ assert.ok(f);
+ assert.equal(normalize(f,fixture.answer),null);
+ const base=JSON.parse(fixture.raw);
+ base.improvement.next='补一句。';
+ base.memory='他说“好”，我回"知道了"';
+ const round=ctx.parseJsonBlock(JSON.stringify(base));
+ assert.equal(round.memory,'他说“好”，我回"知道了"');
+ assert.equal(normalize(round,fixture.answer).feedbackVersion,2);
+});
+test('a genuinely incomplete return stays unstructured and does not ask for a repair',()=>{
+ const cut=JSON.parse(fixture.raw);
+ delete cut.rewrite; cut.improvement.next='补一句。';
+ assert.equal(normalize(cut,fixture.answer),null);
+ assert.equal(ctx.needsNextRepair(cut),false);
+});
 console.log(JSON.stringify({passed}));

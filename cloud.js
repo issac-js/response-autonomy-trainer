@@ -361,12 +361,6 @@ function aiErrorMessage(e){
  if(/^gateway_|^model_/.test(code))return '模型服务暂时不可用，稍后再试。';
  return 'AI 分析未完成：'+((e&&e.message)||'未知错误')+'。你的原话仍保存在本机。';
 }
-function parseJsonBlock(text){
- const raw=String(text||'');
- const a=raw.indexOf('{'),b=raw.lastIndexOf('}');
- if(a<0||b<=a)return null;
- try{const o=JSON.parse(raw.slice(a,b+1));return o&&typeof o==='object'?o:null}catch(e){return null}
-}
 const MODEL_CHAIN=['deepseek-v4.1-flash','hy4std','hy4free','hy4-preview-x','glm-5.3-flash'];
 const exhaustedModels=new Set();
 function modelChain(models){
