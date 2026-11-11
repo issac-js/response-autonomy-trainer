@@ -24,7 +24,7 @@ test('storage identity unchanged: key, version 1, schema 3, no new persistent fi
  const d=JSON.parse(e.run('JSON.stringify(defaultData())'));
  assert.equal(d.version,1);assert.equal(d.schemaVersion,3);
  assert.deepEqual(Object.keys(d).sort(),['appVersion','cards','coach','created','dialogueHistory','history','revision','schemaVersion','settings','version','writes']);
- assert.equal(e.run('APP_VERSION'),'0.12.0');
+ assert.equal(e.run('APP_VERSION'),'0.13.0');
 });
 test('v0.3 in-memory migration does not rewrite disk; due and old payloads intact',()=>{
  const raw=JSON.stringify(legacy),e=env(raw);

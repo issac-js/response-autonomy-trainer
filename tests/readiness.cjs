@@ -164,7 +164,7 @@ async function main(){
   assert.equal(await p.locator('#quickFeedback ol li').count(),3);await p.evaluate(()=>{quickNext();quickNext()});assert.equal(await p.evaluate('quickState.step'),1);
   assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
- await test('all 27 quick questions give answers and explanations without scheduling a review',async()=>{
+ await test('all 33 quick questions give answers and explanations without scheduling a review',async()=>{
   const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#quickHome');
   const ids=await p.evaluate('QUICK_BANK.map(q=>q.id)');for(const id of ids){
    await p.evaluate(id=>quickStart([id]),id);const picks=await p.evaluate(id=>quickQuestion(id).correct,id);
@@ -224,10 +224,10 @@ async function main(){
   }
   await p.screenshot({path:path.join(outDir,'quick-landscape-dark.png'),fullPage:false});await c.close();
  });
- await test('four principle reminders link to exercises while preserving existing independent wording',async()=>{
+ await test('all principle reminders link to exercises while preserving existing independent wording',async()=>{
   const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('[data-nav=communication]');
-  await p.fill('#communicationOwn','这句原话要保留');await p.locator('#communicationPrinciples summary').click();assert.equal(await p.locator('[data-principle]').count(),4);
-  for(const topic of ['brief','silence','agency','coordinate']){
+  await p.fill('#communicationOwn','这句原话要保留');await p.locator('#communicationPrinciples summary').click();assert.equal(await p.locator('[data-principle]').count(),6);
+  for(const topic of ['brief','silence','agency','coordinate','focus','choice']){
    await p.click(`[data-principle="${topic}"]`);assert.equal(await p.inputValue('#communicationLesson'),topic);assert.equal(await p.locator('#communicationGuide').count(),0);
    await p.locator('#communicationPrinciples summary').click();
   }
@@ -237,7 +237,7 @@ async function main(){
  });
  await test('new principle themes offer all three quick kinds and retain first-choice history only in tab storage',async()=>{
   const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#quickHome');
-  for(const topic of ['brief','silence','agency']){
+  for(const topic of ['brief','silence','agency','focus','choice']){
    await p.selectOption('#quickTopic',topic);await p.click('#quickStart');
    assert.equal(await p.evaluate('quickState.ids.length'),3);assert.deepEqual((await p.evaluate('quickState.ids.map(id=>quickQuestion(id).kind)')).sort(),['boolean','multi','single']);
    for(let i=0;i<3;i++){
@@ -247,6 +247,16 @@ async function main(){
    }
    assert.match(await p.locator('#root').textContent(),/3\/3 题与参考答案一致/);await p.click('#quickClearRound');
   }
+  assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);assert.equal(await p.evaluate('data.history.length'),0);await c.close();
+ });
+ await test('paired criticism variants distinguish verified omissions from repeated labels without grading the original reply',async()=>{
+  const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('[data-nav=communication]');await p.selectOption('#communicationLesson','focus');
+  await p.fill('#communicationOwn','我先核对事实，不凭一句评价下结论');await p.click('#communicationCommit');
+  await p.selectOption('#communicationVariant','omission');await p.fill('#communicationOwn','核实漏了一页，先补上再确认');await p.click('#communicationCommit');
+  await p.locator('#communicationGuide summary').click();assert.match(await p.locator('#communicationGuide').textContent(),/先补齐并确认效果/);
+  await p.click('#communicationAgain');assert.equal(await p.inputValue('#communicationVariant'),'label');assert.equal(await p.locator('#communicationGuide').count(),0);
+  await p.fill('#communicationOwn','交接已完成，没有新问题就结束重复评价');await p.click('#communicationCommit');await p.locator('#communicationGuide summary').click();
+  assert.match(await p.locator('#communicationGuide').textContent(),/结束重复评价/);assert.equal(await p.evaluate('communicationProgress.focus.answers[0]'),'我先核对事实，不凭一句评价下结论');
   assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);assert.equal(await p.evaluate('data.history.length'),0);await c.close();
  });
  await test('installed shell opens offline and keeps unrelated caches',async()=>{
@@ -260,7 +270,7 @@ async function main(){
   assert.equal(server.listening,false);
   await p.reload({waitUntil:'commit'});
   await p.waitForFunction(()=>typeof APP_VERSION!=='undefined'&&!!document.querySelector('#daily')&&window.beforeOfflineReload===undefined);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.12.0');
+  assert.equal(await p.evaluate('APP_VERSION'),'0.13.0');
   assert.equal(await p.locator('#daily').count(),1);
   assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));
   await c.close();

@@ -244,6 +244,60 @@ const COMMUNICATION_LESSONS=[
    ]
   ],
   "transfer": "在一次小挫折或纸面模拟中，写下一条已确认的事实，再选一个自己能做的调整；需要资源或支持时也可以提出。"
+ },
+ {
+  "id": "focus",
+  "title": "目标与反馈：抓主线，也听具体问题",
+  "why": "先退一步，看清事实、感受和主要目标。没有根据的人格评价可以放下；指出真实遗漏、安全或实际影响的信息，要核对并处理。眼前进度也要结合质量、信誉和长期成本。",
+  "steps": [
+   "稳一下：承认委屈或生气，区分事实和自己的猜测；视角再多，也有未知。",
+   "定目标：这次要解决什么？同时留意安全、质量、约定和长期影响。",
+   "分信息：具体事实与影响要核对；无根据的标签、无关争辩可不接下去。",
+   "选行动：解决一件关键问题，有新信息就调整；不用证明自己处处都对。"
+  ],
+  "scene": "你要把材料按约定交给接班同事。有人说“你就是不靠谱”，但没指出哪份材料有问题。你觉得委屈，目前还没核对交接是否有遗漏。",
+  "prompt": "怎样先稳一下，再分清当前目标、需要核对的信息和可以放下的评价？",
+  "example": "这句评价让我委屈，但它还没说明具体问题。我先核对材料与交接时间；如果有遗漏，请说清是哪一处。",
+  "variants": [
+   [
+    "omission",
+    "对方接着指出附件缺了一页。你核实确实漏发，接班同事因此无法继续工作。",
+    "这一页确实漏发了，我先补上，再确认你能否继续处理。其他评价先放一边，具体遗漏要修复。"
+   ],
+   [
+    "label",
+    "材料已核对齐全，约定的交接也确认完成。对方仍重复“不靠谱”，没有提出新的具体问题。",
+    "如果有具体材料问题，可以说清。现在交接已确认完成，我先回到下一项工作；请不要作人格评价。"
+   ]
+  ],
+  "transfer": "在低风险交流或纸面模拟里，只分清一次：一句评价是否提供了可核实的事实？它会改变哪个必要行动？选一件要处理的事即可。"
+ },
+ {
+  "id": "choice",
+  "title": "边界与责任：能否做、值不值得做分开看",
+  "why": "合理拒绝后对方失望，不足以证明你做错了；内疚也只是需要核对的信号。确实失约就具体补救。行动还要看同意、权限、约定和后果，不能只靠“没看到禁止”判断。",
+  "steps": [
+   "看责任：自己有没有明确答应？是否影响了别人必要的安排？",
+   "分感受：可以内疚，但先查事实，不凭情绪给自己定错。",
+   "做修复：有具体责任就说明和补救；合理边界可以保留。",
+   "看选择：能否做、是否获准、值不值得做、后果由谁承担，分开核对。"
+  ],
+  "scene": "朋友邀请你参加一次自愿聚会。你已有自己的安排，没有承诺参加；你礼貌拒绝后，朋友表示失望，你有些内疚。",
+  "prompt": "你需要因为朋友失望而撤回拒绝吗？你会怎样表达自己的选择？",
+  "example": "谢谢你邀请，这次我已有安排，不能参加。知道你有点失望，我也珍惜我们的联系；但这次安排我想保留。",
+  "variants": [
+   [
+    "promise",
+    "换个条件：你此前明确答应给同事发资料，对方按此安排了工作。现在你核实自己漏发，确实影响了对方。",
+    "我答应的资料漏发了，是这件事没有做好。我先补发并确认影响，再商量需要的补救。"
+   ],
+   [
+    "permission",
+    "你想把同事的私人聊天截图发到公开平台，没有征得同意，也没核对相关约定，只觉得“没看到法律明确禁止”。",
+    "先暂停公开，核对当事人同意、隐私、授权和相关约定。如果只是需要说明工作事实，就向合适对象说明必要内容，不擅自公开原聊天。"
+   ]
+  ],
+  "transfer": "在低风险交流或纸面模拟中，核对一次自己是否承诺过、是否有具体影响。合理拒绝可保留；确有责任时只选一项具体补救。"
  }
 ];
 // Six-step review adapted from incident-analysis; everyday examples authored here.
@@ -391,6 +445,38 @@ const COMMUNICATION_GUIDES={
     "反复贬低是需要处理的具体行为。**说明边界、记录事实并寻求适当支持，也是积极行动。** 不必把它解释为自己心态差。"
    ]
   }
+ },
+ "focus": {
+  "memory": "**先稳住、看事实；抓住目标，分清反馈和杂音。**",
+  "information": "先问**具体哪份材料、哪一页、影响了什么工作**，再核对文件和交接确认。也看看安全、质量和约定；不把所有反馈都当干扰，也不凭一句标签猜动机。",
+  "boundary": "观察者视角仍然有未知。目标导向也要顾及规则、实际影响和长期信誉，不能为了赶进度屏蔽必要反馈。",
+  "fallback": "没有具体新问题时，可以结束无关争辩；如果后来出现可核实的遗漏或风险，就回来处理，不必固守最初判断。",
+  "variants": {
+   "omission": [
+    "补发后对方能否继续工作，还需确认。",
+    "附件缺页已经核实，而且影响了交接。**这条反馈能帮助完成主要目标，先补齐并确认效果。** 可以不接受人格标签，同时处理真实问题。"
+   ],
+   "label": [
+    "无法知道对方所有想法，也不必为每句标签自证。",
+    "材料与交接已核对，对方没有新增事实。**可以说明边界，结束重复评价，回到当前任务。** 后续若有具体问题，再核对处理。"
+   ]
+  }
+ },
+ "choice": {
+  "memory": "**合理设界，有责修复；权限、约定和后果要核对。**",
+  "information": "核对**先前承诺、对方实际依赖、当事人同意和适用约定**。可看双方的确认记录并向相关人澄清；具体法律问题随事实与地区而异，拿不准时寻求适当专业意见。",
+  "boundary": "内疚或别人失望都不能单独证明做错。明确失约或影响需要具体处理；未见禁止也不能代替授权、同意或对隐私与后果的核对。",
+  "fallback": "如果发现确有承诺，就商量补救；如果没有义务或实际不当影响，可以保留合理拒绝。涉及公开信息时先确认分享范围，风险未明可暂缓。",
+  "variants": {
+   "promise": [
+    "对方受影响的范围与需要什么补救，还要核对。",
+    "明确承诺且已核实漏发，与合理拒绝聚会不同。**承认具体失约、补发并确认影响，是负责地修复。** 不用把这件事扩成对整个人的否定。"
+   ],
+   "permission": [
+    "是否获准公开、适用规则和可能影响，都尚未核清。",
+    "私人聊天涉及他人的信息与权益。**先核对同意、权限、约定和后果，再决定是否及如何分享。** 不能只凭“没看到禁止”断言可以公开。"
+   ]
+  }
  }
 };
 const COMMUNICATION_PRINCIPLES=[
@@ -413,6 +499,16 @@ const COMMUNICATION_PRINCIPLES=[
   "topic": "coordinate",
   "label": "多看一个角度，按条件调整",
   "when": "同时看双方需要、规则和实际影响；安全需要可能改变先后，责任仍按事实判断。"
+ },
+ {
+  "topic": "focus",
+  "label": "抓住目标，分清反馈与杂音",
+  "when": "先稳住、核对事实；具体遗漏与安全影响要处理，无根据的标签和无关争辩可以放下。"
+ },
+ {
+  "topic": "choice",
+  "label": "合理设界，有责修复",
+  "when": "感到内疚先核对承诺和影响；行动也要看同意、权限、约定与后果，不能只凭未见禁止。"
  }
 ];
 function communicationGuide(lesson,variant){
@@ -439,7 +535,7 @@ function communicationSave(){try{sessionStorage.setItem(COMMUNICATION_KEY,JSON.s
 function renderCommunication(){
  const lesson=COMMUNICATION_LESSONS.find(x=>x.id===communicationLesson)||COMMUNICATION_LESSONS[0];
  const s=communicationProgress[lesson.id]||={stage:0,answers:['',''],variant:lesson.variants[0][0]},variant=lesson.variants.find(v=>v[0]===s.variant);
- root.innerHTML=`<section class="panel"><h2>沟通方法 · 先理解，再练习</h2><p>每次只练一个小动作。允许紧张、重复、跳过或休息；不按焦虑下降升级，也不要求每句话都完美。</p><details id="communicationPrinciples"><summary>四个常用提醒 · 什么时候用？</summary>${COMMUNICATION_PRINCIPLES.map(p=>`<p><b>${safe(p.label)}</b><br>${safe(p.when)}</p><button class="ghost" data-principle="${p.topic}">练一练：${safe(p.label)}</button>`).join('')}</details><label for="communicationLesson">选择能力</label><select id="communicationLesson">${COMMUNICATION_LESSONS.map(x=>`<option value="${x.id}" ${x.id===lesson.id?'selected':''}>${safe(x.title)}</option>`).join('')}</select><details ${s.stage===0?'open':''}><summary>先记一句，再看怎么做</summary><h3>${safe(lesson.title)}</h3><p>${safe(lesson.why)}</p><p class="learning-memory">${mdBold(COMMUNICATION_GUIDES[lesson.id].memory)}</p><ol>${lesson.steps.map(x=>`<li>${safe(x)}</li>`).join('')}</ol></details><details><summary>怎么练更轻松？</summary><p>先在这里模拟；愿意时，在熟悉、安全的交流里试一个小动作。可以重复、休息或只做模拟，不用等到完全不紧张才开始。这个工具不代替心理治疗。</p><p>有情绪很正常，不用压住它。试着理解对方，也可以保留自己的需要。私事可以不展开，该如实说明的工作安排要讲清。</p></details></section><section class="panel"><span class="pill">${s.stage===0?'独立回应':s.stage===1?'改变条件后重答':'本次模拟完成'}</span><h2 ${s.stage>0?'data-practice-focus':''}>${s.stage===0?'先写自己的判断和原话':s.stage===1?'条件变了，还用原来的说法吗？':'只选一个现实小动作'}</h2><p class="scene">${safe(lesson.scene)}</p>${s.stage>0?`<details><summary>回看第一轮原话与一种示范</summary><p class="quote-reply">${safe(s.answers[0])}</p><p>${safe(lesson.example)}</p><p class="small muted">示范不是标准答案，也不证明对方一定会这样回应。</p></details>`:''}${s.stage===1?`<label for="communicationVariant">改变一个条件</label><select id="communicationVariant">${lesson.variants.map(v=>`<option value="${v[0]}" ${v[0]===s.variant?'selected':''}>${safe(v[1])}</option>`).join('')}</select><p class="notice">${safe(variant[1])}</p>`:''}${s.stage<2?`<label for="communicationOwn">${s.stage===0?safe(lesson.prompt):'情况变了：你会改哪一步？现在怎么说？'}</label><textarea id="communicationOwn" ${unsavedAttrs('communication',lesson.id,String(s.stage)+':'+s.variant,'own')} maxlength="1200" placeholder="写自己的判断和一两句回应；可以保留不确定。">${safe(s.answers[s.stage])}</textarea><div class="actions"><button class="primary" id="communicationCommit" ${s.answers[s.stage].trim()?'':'disabled'}>${s.stage===0?'确认原话 · 看条件变化':'确认调整 · 查看复盘'}</button></div>`:`<p><b>变化条件：</b>${safe(variant[1])}</p><p class="quote-reply">${safe(s.answers[1])}</p>${communicationGuide(lesson,variant)}<p>简单回想一次就好：多知道了什么？改了哪一步？还有什么不知道？不必用对方是否满意来评判自己。</p><p><b>低风险实践：</b>${safe(lesson.transfer)}</p><p>愿意试一试时，可以填下方的真实交流计划。结果不理想或暂时不知道，也可以如实记录。</p><div class="actions"><button class="primary" id="communicationTransfer">填写真实交流计划</button><button class="secondary" id="communicationAgain">换个条件再练</button></div>`}<p class="small muted" id="communicationStatus" role="status">${communicationStorageOK?'当前课程只在本标签页暂存，不写入学习记录、不进入备份或云同步。真实计划需另行明确保存。':'暂存不可用，请自行保留需要的文字；关闭或刷新页面可能丢失。'}</p><button class="ghost" id="communicationRest">暂存并休息</button></section>`;
+ root.innerHTML=`<section class="panel"><h2>沟通方法 · 先理解，再练习</h2><p>每次只练一个小动作。允许紧张、重复、跳过或休息；不按焦虑下降升级，也不要求每句话都完美。</p><details id="communicationPrinciples"><summary>常用判断提醒 · 什么时候用？</summary><p class="learning-memory">先稳住，再看事实；抓住目标，分清轻重；合理设界，有责修复；条件变了，就调整。</p>${COMMUNICATION_PRINCIPLES.map(p=>`<p><b>${safe(p.label)}</b><br>${safe(p.when)}</p><button class="ghost" data-principle="${p.topic}">练一练：${safe(p.label)}</button>`).join('')}</details><label for="communicationLesson">选择能力</label><select id="communicationLesson">${COMMUNICATION_LESSONS.map(x=>`<option value="${x.id}" ${x.id===lesson.id?'selected':''}>${safe(x.title)}</option>`).join('')}</select><details ${s.stage===0?'open':''}><summary>先记一句，再看怎么做</summary><h3>${safe(lesson.title)}</h3><p>${safe(lesson.why)}</p><p class="learning-memory">${mdBold(COMMUNICATION_GUIDES[lesson.id].memory)}</p><ol>${lesson.steps.map(x=>`<li>${safe(x)}</li>`).join('')}</ol></details><details><summary>怎么练更轻松？</summary><p>先在这里模拟；愿意时，在熟悉、安全的交流里试一个小动作。可以重复、休息或只做模拟，不用等到完全不紧张才开始。这个工具不代替心理治疗。</p><p>有情绪很正常，不用压住它。试着理解对方，也可以保留自己的需要。私事可以不展开，该如实说明的工作安排要讲清。</p></details></section><section class="panel"><span class="pill">${s.stage===0?'独立回应':s.stage===1?'改变条件后重答':'本次模拟完成'}</span><h2 ${s.stage>0?'data-practice-focus':''}>${s.stage===0?'先写自己的判断和原话':s.stage===1?'条件变了，还用原来的说法吗？':'只选一个现实小动作'}</h2><p class="scene">${safe(lesson.scene)}</p>${s.stage>0?`<details><summary>回看第一轮原话与一种示范</summary><p class="quote-reply">${safe(s.answers[0])}</p><p>${safe(lesson.example)}</p><p class="small muted">示范不是标准答案，也不证明对方一定会这样回应。</p></details>`:''}${s.stage===1?`<label for="communicationVariant">改变一个条件</label><select id="communicationVariant">${lesson.variants.map(v=>`<option value="${v[0]}" ${v[0]===s.variant?'selected':''}>${safe(v[1])}</option>`).join('')}</select><p class="notice">${safe(variant[1])}</p>`:''}${s.stage<2?`<label for="communicationOwn">${s.stage===0?safe(lesson.prompt):'情况变了：你会改哪一步？现在怎么说？'}</label><textarea id="communicationOwn" ${unsavedAttrs('communication',lesson.id,String(s.stage)+':'+s.variant,'own')} maxlength="1200" placeholder="写自己的判断和一两句回应；可以保留不确定。">${safe(s.answers[s.stage])}</textarea><div class="actions"><button class="primary" id="communicationCommit" ${s.answers[s.stage].trim()?'':'disabled'}>${s.stage===0?'确认原话 · 看条件变化':'确认调整 · 查看复盘'}</button></div>`:`<p><b>变化条件：</b>${safe(variant[1])}</p><p class="quote-reply">${safe(s.answers[1])}</p>${communicationGuide(lesson,variant)}<p>简单回想一次就好：多知道了什么？改了哪一步？还有什么不知道？不必用对方是否满意来评判自己。</p><p><b>低风险实践：</b>${safe(lesson.transfer)}</p><p>愿意试一试时，可以填下方的真实交流计划。结果不理想或暂时不知道，也可以如实记录。</p><div class="actions"><button class="primary" id="communicationTransfer">填写真实交流计划</button><button class="secondary" id="communicationAgain">换个条件再练</button></div>`}<p class="small muted" id="communicationStatus" role="status">${communicationStorageOK?'当前课程只在本标签页暂存，不写入学习记录、不进入备份或云同步。真实计划需另行明确保存。':'暂存不可用，请自行保留需要的文字；关闭或刷新页面可能丢失。'}</p><button class="ghost" id="communicationRest">暂存并休息</button></section>`;
  document.getElementById('communicationLesson').onchange=e=>{communicationLesson=e.target.value;communicationSave();renderCommunication()};
  root.querySelectorAll('[data-principle]').forEach(button=>button.onclick=()=>{communicationLesson=button.dataset.principle;communicationSave();renderCommunication()});
  document.getElementById('communicationRest').onclick=()=>setPage('home');
