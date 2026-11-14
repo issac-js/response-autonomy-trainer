@@ -1974,6 +1974,7 @@ function quickMarkSeen(id){try{const seen=quickSeenRead();seen[id]=Date.now();lo
 function quickSeenClear(){try{localStorage.removeItem(QUICK_SEEN_KEY);quickSeenOK=true}catch(e){quickSeenOK=false}}
 function quickResetSeen(){quickSeenClear();renderQuickPractice()}
 const QUICK_KINDS={single:'单选题',multi:'多选题',boolean:'判断题'};
+let quickPracticing=false;
 let quickStorageOK=true,quickState=quickRead();
 function quickQuestion(id){return QUICK_BANK.find(q=>q.id===id)}
 function quickValidPicks(q,picks,allowEmpty=false){
@@ -1995,7 +1996,7 @@ function quickRead(){
 }
 function quickSave(){try{sessionStorage.setItem(QUICK_KEY,JSON.stringify(quickState));quickStorageOK=true}catch(e){quickStorageOK=false}const status=document.getElementById('quickStatus');if(status)status.textContent=quickStorageMessage()}
 function quickStorageMessage(){return quickStorageOK?'本轮只在本标签页暂存，刷新后可从“快速刷题”继续；不进入学习备份或云同步。':'本轮暂存失败，请先自行保留需要的要点；刷新或关闭页面可能丢失进度。'}
-function quickClear(){quickState=null;try{sessionStorage.removeItem(QUICK_KEY)}catch(e){}}
+function quickClear(){quickPracticing=false;quickState=null;try{sessionStorage.removeItem(QUICK_KEY)}catch(e){}}
 function quickCorrect(q,picks){return picks.length===q.correct.length&&q.correct.every(n=>picks.includes(n))}
 function quickShuffle(list){const out=list.slice();for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out}
 function quickStart(ids){
@@ -2007,7 +2008,7 @@ function quickStart(ids){
   chosen=kind==='all'?Object.keys(QUICK_KINDS).flatMap(k=>quickTake(pool.filter(q=>q.kind===k),2)).map(q=>q.id):quickTake(pool,6).map(q=>q.id);
  }
  if(!chosen.length)return;
- quickState={version:1,topic,kind,ids:quickShuffle([...new Set(chosen)]).slice(0,6),step:0,selected:[],answers:[]};quickSave();renderQuickPractice();
+ quickPracticing=true;quickState={version:1,topic,kind,ids:quickShuffle([...new Set(chosen)]).slice(0,6),step:0,selected:[],answers:[]};quickSave();renderQuickPractice();
 }
 function quickSubmit(){
  const s=quickState,q=s&&quickQuestion(s.ids[s.step]);if(!q||s.answers[s.step]||!quickValidPicks(q,s.selected))return;
@@ -2023,6 +2024,7 @@ function renderQuickPractice(){
  const seen=quickSeenRead();
  let body;
  if(!s)body=setup;
+ else if(!done&&!quickPracticing)body=`<p>上次这一轮已暂存，可以接着做，也可以重新选择题型开始一轮。</p><button class="primary" id="quickResume">继续上次刷题</button><details><summary>选择题型，重新开始一轮</summary>${setup}</details>`;
  else if(done){
   const wrong=s.answers.filter(a=>!quickCorrect(quickQuestion(a.id),a.picks)),correct=s.ids.length-wrong.length;
   body=`<h3 data-practice-focus>本轮完成 · ${correct}/${s.ids.length} 题与参考答案一致</h3><p>这里统计的是选项判断，不代表你在真实交流中已经熟练。挑一个要点记住就好。</p><details><summary>回看本轮首次选择</summary>${s.answers.map(a=>{const q=quickQuestion(a.id);return `<p><b>${safe(q.prompt)}</b><br>你的选择：${a.picks.map(n=>safe(q.options[n].text)).join('；')}<br>参考答案：${q.correct.map(n=>safe(q.options[n].text)).join('；')}</p>`}).join('')}</details>${wrong.length?'<button class="secondary" id="quickRetry">把本轮错题再练一次</button>':'<p class="learning-memory">这一轮已对照完成。愿意时，用自己的话试着回应一个情境。</p>'}<details><summary>选择主题或题型，再开一轮</summary>${setup}</details>`;
@@ -2033,6 +2035,7 @@ function renderQuickPractice(){
  root.innerHTML=`<section class="panel quick-panel"><h2>快速刷题 · 选完马上看懂</h2><p class="small muted">先看情境，再作选择。每题都有答案、简明理由和条件变化提醒；不计时、不扣学习分。</p>${body}<p class="small muted" id="quickExposure">本机全部题库已练 ${Object.keys(seen).length}/${QUICK_BANK.length} 题。${quickSeenOK?'题库有限，练完后会轮换复练；错题重练仍可主动重复。':'本机记题不可用，可能较早重复；当前练习仍可继续。'}</p><button class="ghost" id="quickResetSeen">重新开始题目轮换（不清学习记录）</button><p class="small muted" id="quickStatus" role="status">${quickStorageMessage()}</p>${s?'<button class="ghost" id="quickClearRound">清除本轮暂存</button>':''}</section>`;
  document.getElementById('quickResetSeen').onclick=quickResetSeen;
  const clear=document.getElementById('quickClearRound');if(clear)clear.onclick=()=>{quickClear();renderQuickPractice()};
+ const resume=document.getElementById('quickResume');if(resume)firstTap(resume,()=>{quickPracticing=true;renderQuickPractice()});
  const start=document.getElementById('quickStart');if(start)firstTap(start,()=>quickStart());
  root.querySelectorAll('[data-quick-choice]').forEach(button=>button.onclick=()=>{
   if(!quickState||quickState!==s||s.answers[s.step])return;
