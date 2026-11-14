@@ -3,6 +3,9 @@ from pathlib import Path
 import base64,json,re
 root=Path(__file__).parent
 html=root.joinpath('template.html').read_text('utf-8')
+version=re.search(r"APP_VERSION='([^']+)'",root.joinpath('data.js').read_text('utf-8'))[1]
+if html.count('<!--APP_VERSION-->')!=2:raise ValueError('Expected title and footer version placeholders')
+html=html.replace('<!--APP_VERSION-->',version)
 
 # Inline the app icon so the single file keeps its identity offline and when
 # hosted. Sources live in assets/ and are rendered by tools/render-icon.cjs.

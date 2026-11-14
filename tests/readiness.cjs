@@ -164,7 +164,7 @@ async function main(){
   assert.equal(await p.locator('#quickFeedback ol li').count(),3);await p.evaluate(()=>{quickNext();quickNext()});assert.equal(await p.evaluate('quickState.step'),1);
   assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
- await test('all 33 quick questions give answers and explanations without scheduling a review',async()=>{
+ await test('all 66 quick questions give answers and explanations without scheduling a review',async()=>{
   const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#quickHome');
   const ids=await p.evaluate('QUICK_BANK.map(q=>q.id)');for(const id of ids){
    await p.evaluate(id=>quickStart([id]),id);const picks=await p.evaluate(id=>quickQuestion(id).correct,id);
@@ -191,7 +191,7 @@ async function main(){
  });
  await test('quick topic filters and reading links preserve the independent-response exercise',async()=>{
   const {c,p}=await fresh();await p.click('#quickHome');await p.selectOption('#quickTopic','privacy');await p.selectOption('#quickKind','boolean');await p.click('#quickStart');
-  assert.deepEqual(await p.evaluate('quickState.ids'),['Q12']);await p.click('[data-quick-choice="1"]');await p.click('#quickSubmit');
+  assert.equal(await p.evaluate("quickState.ids.every(id=>quickQuestion(id).topic==='privacy'&&quickQuestion(id).kind==='boolean')"),true);const pick=await p.evaluate('quickQuestion(quickState.ids[0]).correct[0]');await p.click(`[data-quick-choice="${pick}"]`);await p.click('#quickSubmit');
   await p.click('#quickLearn');assert.equal(await p.inputValue('#communicationLesson'),'privacy');assert.equal(await p.locator('#communicationGuide').count(),0);
   await p.click('#practiceBack');await p.click('#quickHome');assert.equal(await p.locator('#quickFeedback').count(),1);await c.close();
  });
@@ -239,13 +239,13 @@ async function main(){
   const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#quickHome');
   for(const topic of ['brief','silence','agency','focus','choice']){
    await p.selectOption('#quickTopic',topic);await p.click('#quickStart');
-   assert.equal(await p.evaluate('quickState.ids.length'),3);assert.deepEqual((await p.evaluate('quickState.ids.map(id=>quickQuestion(id).kind)')).sort(),['boolean','multi','single']);
-   for(let i=0;i<3;i++){
+   assert.equal(await p.evaluate('quickState.ids.length'),6);assert.deepEqual((await p.evaluate('quickState.ids.map(id=>quickQuestion(id).kind)')).sort(),['boolean','boolean','multi','multi','single','single']);
+   for(let i=0;i<6;i++){
     assert.equal(await p.locator('#quickFeedback').count(),0);const picks=await p.evaluate('quickQuestion(quickState.ids[quickState.step]).correct');
     for(const n of picks)await p.click(`[data-quick-choice="${n}"]`);await p.click('#quickSubmit');assert.equal(await p.evaluate('quickState.answers.length'),i+1);
     await p.click('#quickNext');
    }
-   assert.match(await p.locator('#root').textContent(),/3\/3 题与参考答案一致/);await p.click('#quickClearRound');
+   assert.match(await p.locator('#root').textContent(),/6\/6 题与参考答案一致/);await p.click('#quickClearRound');
   }
   assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);assert.equal(await p.evaluate('data.history.length'),0);await c.close();
  });
@@ -290,6 +290,16 @@ async function main(){
   for(const size of [{width:320,height:568},{width:844,height:390},{width:390,height:844}]){await p.setViewportSize(size);assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))}
   await p.locator('#aiRecall summary').click();await p.fill('#aiRecallOwn','我自己的巩固表达');await p.click('[data-rate=hard]');assert.equal(await p.evaluate('data.history.length'),1);assert.equal(await p.evaluate('data.history[0].fsrsLog.rating'),2);assert.equal(await p.evaluate('data.history[0].answer'),'合成原话：我先核对事实');await c.close();
  });
+ await test('rotation persists across reopen, avoids recent rounds, and can reset without learning writes',async()=>{
+  const {c,p}=await fresh();await p.click('#quickHome');await p.click('#quickStart');const first=await p.evaluate('quickState.ids.slice()');
+  for(let i=0;i<6;i++){const choices=await p.evaluate('quickQuestion(quickState.ids[quickState.step]).correct');for(const n of choices)await p.click(`[data-quick-choice="${n}"]`);await p.click('#quickSubmit');await p.click('#quickNext')}
+  assert.equal(await p.evaluate('Object.keys(quickSeenRead()).length'),6);await p.reload();await p.click('#quickHome');await p.locator('details').filter({has:p.locator('#quickStart')}).locator('summary').click();await p.click('#quickStart');
+  assert.ok((await p.evaluate('quickState.ids')).every(id=>!first.includes(id)));await p.click('#quickResetSeen');assert.equal(await p.evaluate('Object.keys(quickSeenRead()).length'),0);assert.equal(await p.evaluate('localStorage.getItem(STORE)'),null);await c.close();
+ });
+ await test('title footer and runtime version agree and update checking preserves local records',async()=>{
+  const {c,p}=await fresh();assert.ok((await p.title()).includes(await p.evaluate('APP_VERSION')));assert.ok((await p.locator('.foot').textContent()).includes(await p.evaluate('APP_VERSION')));
+  await p.click('[data-nav=settings]');assert.match(await p.locator('#runtimeVersion').textContent(),/0\.15\.0/);const before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#checkAppUpdate');await p.waitForFunction('!document.getElementById("checkAppUpdate").disabled');assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+ });
  await test('installed shell opens offline and keeps unrelated caches',async()=>{
   const {c,p}=await fresh({serviceWorkers:'allow'});
   await p.evaluate(async()=>{await navigator.serviceWorker.ready;await caches.open('unrelated-fixture-cache')});
@@ -301,7 +311,7 @@ async function main(){
   assert.equal(server.listening,false);
   await p.reload({waitUntil:'commit'});
   await p.waitForFunction(()=>typeof APP_VERSION!=='undefined'&&!!document.querySelector('#daily')&&window.beforeOfflineReload===undefined);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.14.3');
+  assert.equal(await p.evaluate('APP_VERSION'),'0.15.0');
   assert.equal(await p.locator('#daily').count(),1);
   assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));
   await c.close();

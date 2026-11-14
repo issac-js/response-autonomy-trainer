@@ -1004,9 +1004,975 @@ const QUICK_BANK=[
    "确认补救效果，不把一次问题扩成整个人的结论。"
   ],
   "shift": "如果没有承诺或实际不当影响，只是对方失望，则先核对事实，不自动认错。"
+ },
+ {
+  "id": "Q34",
+  "topic": "observe",
+  "kind": "single",
+  "scene": "群消息没回，但已有值班表确认今天由另一位同事处理。",
+  "prompt": "你现在怎样做合适？",
+  "options": [
+   {
+    "text": "按值班安排找当班同事确认。",
+    "why": "已有明确工作安排，按职责渠道处理更有用。"
+   },
+   {
+    "text": "继续追问原收件人的私人行程。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "把没回复当作不尊重自己。",
+    "why": "这没有回应当前具体需要，或超出了已有依据。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "群消息没回，但已有值班表确认今天由另一位同事处理。",
+   "已有明确工作安排，按职责渠道处理更有用。",
+   "未回复原因仍未知；已确认的安排可用于行动。"
+  ],
+  "shift": "如果值班表有变，再向相关负责人核对。"
+ },
+ {
+  "id": "Q35",
+  "topic": "listen",
+  "kind": "multi",
+  "scene": "朋友分享散步照片，你今天也愿意聊一会儿。",
+  "prompt": "哪些回应能自然接话？",
+  "options": [
+   {
+    "text": "要求对方解释为什么没有先邀请你。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "问一个相关且不打探隐私的小问题。",
+    "why": "围绕对方正在分享的内容，能给彼此选择空间。"
+   },
+   {
+    "text": "回应照片中的一个具体景物。",
+    "why": "围绕对方正在分享的内容，能给彼此选择空间。"
+   }
+  ],
+  "correct": [
+   2,
+   1
+  ],
+  "steps": [
+   "朋友分享散步照片，你今天也愿意聊一会儿。",
+   "围绕对方正在分享的内容，能给彼此选择空间。",
+   "分享与求助不同，先接住内容再看意愿。"
+  ],
+  "shift": "对方表示要忙时，可以自然收尾。"
+ },
+ {
+  "id": "Q36",
+  "topic": "appreciate",
+  "kind": "boolean",
+  "scene": "同事帮你发现表格错误，但他暂时没空再检查其他内容。",
+  "prompt": "“感谢这次帮助后，还可以接受他没空继续帮忙。”对吗？",
+  "options": [
+   {
+    "text": "错，帮过一次就应继续。",
+    "why": "该选择忽略了本题已说明的条件。"
+   },
+   {
+    "text": "对。",
+    "why": "感谢已有帮助不产生新的额外义务。"
+   }
+  ],
+  "correct": [
+   1
+  ],
+  "steps": [
+   "同事帮你发现表格错误，但他暂时没空再检查其他内容。",
+   "感谢已有帮助不产生新的额外义务。",
+   "把感谢和后续请求分开。"
+  ],
+  "shift": "若另有明确职责分工，按分工核对。"
+ },
+ {
+  "id": "Q37",
+  "topic": "privacy",
+  "kind": "single",
+  "scene": "同事想知道你的具体住址，只为安排一场线上讨论。",
+  "prompt": "怎样回应合适？",
+  "options": [
+   {
+    "text": "说明可参加的线上时间，具体住址不展开。",
+    "why": "线上安排需要时间等必要信息，具体住址未体现用途。"
+   },
+   {
+    "text": "为显得合群公开全部住址。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "编造住址让对方停止询问。",
+    "why": "这没有回应当前具体需要，或超出了已有依据。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "同事想知道你的具体住址，只为安排一场线上讨论。",
+   "线上安排需要时间等必要信息，具体住址未体现用途。",
+   "用途决定信息范围。"
+  ],
+  "shift": "若确有寄送材料需要，先核对对象和必要范围。"
+ },
+ {
+  "id": "Q38",
+  "topic": "coordinate",
+  "kind": "multi",
+  "scene": "在安静会议室，两人都想先用投影，各有十分钟内容，会议还有半小时。",
+  "prompt": "哪些做法有助于协调？",
+  "options": [
+   {
+    "text": "各自理由合理，就坚持谁也不能调整。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "无特殊依赖时商量一个可行顺序。",
+    "why": "明确任务和时间后，可以协商顺序而不争人格。"
+   },
+   {
+    "text": "核对是否有人有明确的先后依赖。",
+    "why": "明确任务和时间后，可以协商顺序而不争人格。"
+   }
+  ],
+  "correct": [
+   2,
+   1
+  ],
+  "steps": [
+   "在安静会议室，两人都想先用投影，各有十分钟内容，会议还有半小时。",
+   "明确任务和时间后，可以协商顺序而不争人格。",
+   "合理意图仍需要实际协调。"
+  ],
+  "shift": "若一个内容是后续讨论的前提，顺序应随任务变化。"
+ },
+ {
+  "id": "Q39",
+  "topic": "repair",
+  "kind": "boolean",
+  "scene": "你把消息发错到另一个工作群，内容无敏感信息，但让同事误以为任务改期。",
+  "prompt": "“应澄清正确时间，而不只是不断道歉。”对吗？",
+  "options": [
+   {
+    "text": "对。",
+    "why": "修复要补足影响安排的具体信息。"
+   },
+   {
+    "text": "错，道歉足够无需说明事实。",
+    "why": "该选择忽略了本题已说明的条件。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "你把消息发错到另一个工作群，内容无敏感信息，但让同事误以为任务改期。",
+   "修复要补足影响安排的具体信息。",
+   "承认影响后补上能落实的调整。"
+  ],
+  "shift": "若含敏感信息，还需按适用流程处理，不只改口。"
+ },
+ {
+  "id": "Q40",
+  "topic": "brief",
+  "kind": "single",
+  "scene": "负责人只要决定今天先做哪一项，两个任务的期限与人手均已核实。",
+  "prompt": "你会怎样汇报？",
+  "options": [
+   {
+    "text": "先说建议优先项及依据，再说明取舍。",
+    "why": "先给有依据的当前判断，便于对方作决定。"
+   },
+   {
+    "text": "先讲全部工作流水账，最后才说建议。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "只说我很努力，回避任务安排。",
+    "why": "这没有回应当前具体需要，或超出了已有依据。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "负责人只要决定今天先做哪一项，两个任务的期限与人手均已核实。",
+   "先给有依据的当前判断，便于对方作决定。",
+   "汇报顺序服务于当前决策。"
+  ],
+  "shift": "若期限尚未核实，说明未知，不把猜想当定论。"
+ },
+ {
+  "id": "Q41",
+  "topic": "silence",
+  "kind": "multi",
+  "scene": "同事反复打听无关工作的私人计划，你已礼貌说明不想展开。",
+  "prompt": "哪些做法合理？",
+  "options": [
+   {
+    "text": "为了消除对方失望，把全部私事补充完。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "结束这个话题，回到当前任务。",
+    "why": "重复追问不自动扩大你的分享义务。"
+   },
+   {
+    "text": "简短重申分享范围。",
+    "why": "重复追问不自动扩大你的分享义务。"
+   }
+  ],
+  "correct": [
+   2,
+   1
+  ],
+  "steps": [
+   "同事反复打听无关工作的私人计划，你已礼貌说明不想展开。",
+   "重复追问不自动扩大你的分享义务。",
+   "停住也可以是明确选择。"
+  ],
+  "shift": "如果话题转为确有必要的交接，回应相应工作内容。"
+ },
+ {
+  "id": "Q42",
+  "topic": "agency",
+  "kind": "boolean",
+  "scene": "你发现计划需要两个人完成，负责人已明确允许调整范围。",
+  "prompt": "“可以提出缩小范围的方案，而非随口保证全做完。”对吗？",
+  "options": [
+   {
+    "text": "错，积极就要无条件保证完成。",
+    "why": "该选择忽略了本题已说明的条件。"
+   },
+   {
+    "text": "对。",
+    "why": "具体协商比没有资源依据的保证更可执行。"
+   }
+  ],
+  "correct": [
+   1
+  ],
+  "steps": [
+   "你发现计划需要两个人完成，负责人已明确允许调整范围。",
+   "具体协商比没有资源依据的保证更可执行。",
+   "承认限制后寻找可行一步。"
+  ],
+  "shift": "如果资源补足，再重新评估可完成范围。"
+ },
+ {
+  "id": "Q43",
+  "topic": "focus",
+  "kind": "single",
+  "scene": "材料已交付，但同事指出文件名不清，确实导致接班人找错版本。",
+  "prompt": "现在先处理什么？",
+  "options": [
+   {
+    "text": "核对版本并统一文件名，确认接班人找对。",
+    "why": "已完成一个动作，不代表实际使用问题不用处理。"
+   },
+   {
+    "text": "因为已交付，所有反馈都算杂音。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "先争论谁更细心，暂不改文件。",
+    "why": "这没有回应当前具体需要，或超出了已有依据。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "材料已交付，但同事指出文件名不清，确实导致接班人找错版本。",
+   "已完成一个动作，不代表实际使用问题不用处理。",
+   "主要目标包括实际可用的结果。"
+  ],
+  "shift": "若只是重复标签而无新事实，可以设界并回到任务。"
+ },
+ {
+  "id": "Q44",
+  "topic": "choice",
+  "kind": "multi",
+  "scene": "你想转发团队内部讨论到公开社区，尚未核对成员同意或相关约定。",
+  "prompt": "哪些问题值得先确认？",
+  "options": [
+   {
+    "text": "只要自己觉得有用，就不必考虑其他人。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "是否可以脱敏或只向合适对象说明必要信息。",
+    "why": "信息可见不等于获准公开，要看权限和影响。"
+   },
+   {
+    "text": "是否获准公开及允许的范围。",
+    "why": "信息可见不等于获准公开，要看权限和影响。"
+   }
+  ],
+  "correct": [
+   2,
+   1
+  ],
+  "steps": [
+   "你想转发团队内部讨论到公开社区，尚未核对成员同意或相关约定。",
+   "信息可见不等于获准公开，要看权限和影响。",
+   "能否做与值不值得做要分开判断。"
+  ],
+  "shift": "具体法律问题取决于事实与地区，拿不准时寻求专业意见。"
+ },
+ {
+  "id": "Q45",
+  "topic": "observe",
+  "kind": "boolean",
+  "scene": "对方已说明在开会，约定下午回复；目前尚未到约定时间。",
+  "prompt": "“现在没有新紧急情况，可以先按约定等候。”对吗？",
+  "options": [
+   {
+    "text": "对。",
+    "why": "已有解释与时间约定，不必把未知补成恶意。"
+   },
+   {
+    "text": "错，暂时没回就说明不愿合作。",
+    "why": "该选择忽略了本题已说明的条件。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "对方已说明在开会，约定下午回复；目前尚未到约定时间。",
+   "已有解释与时间约定，不必把未知补成恶意。",
+   "让新事实修正原先猜测。"
+  ],
+  "shift": "如果出现确实不能等待的工作风险，应说明变化并联系合适渠道。"
+ },
+ {
+  "id": "Q46",
+  "topic": "listen",
+  "kind": "single",
+  "scene": "同事请你帮忙选方案，并明确希望听建议。",
+  "prompt": "你会怎样回应？",
+  "options": [
+   {
+    "text": "先核对他的目标和限制，再提一两个可行建议。",
+    "why": "对方的需要已从倾听变成讨论方案。"
+   },
+   {
+    "text": "即使他求建议，也只重复我听见了。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "保证自己的方案一定成功。",
+    "why": "这没有回应当前具体需要，或超出了已有依据。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "同事请你帮忙选方案，并明确希望听建议。",
+   "对方的需要已从倾听变成讨论方案。",
+   "接话方式随对方实际需要调整。"
+  ],
+  "shift": "如果他说暂时不想解决，就回到倾听。"
+ },
+ {
+  "id": "Q47",
+  "topic": "appreciate",
+  "kind": "multi",
+  "scene": "你感谢同事核对数据，同时发现另一人完成了大部分整理。",
+  "prompt": "哪些表达较合适？",
+  "options": [
+   {
+    "text": "为了夸一个人，称所有整理都是他做的。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "认可另一人的整理贡献。",
+    "why": "具体准确的感谢保留真实贡献，不必夸大归属。"
+   },
+   {
+    "text": "感谢这位同事实际核对的部分。",
+    "why": "具体准确的感谢保留真实贡献，不必夸大归属。"
+   }
+  ],
+  "correct": [
+   2,
+   1
+  ],
+  "steps": [
+   "你感谢同事核对数据，同时发现另一人完成了大部分整理。",
+   "具体准确的感谢保留真实贡献，不必夸大归属。",
+   "认可应有可观察的依据。"
+  ],
+  "shift": "尚未确认贡献时，可以先核实再说。"
+ },
+ {
+  "id": "Q48",
+  "topic": "privacy",
+  "kind": "boolean",
+  "scene": "主管询问你负责事项的完成状态，没有询问私人原因。",
+  "prompt": "“可以如实报进度，同时不展开无关私人细节。”对吗？",
+  "options": [
+   {
+    "text": "错，所有关于我的问题都是隐私。",
+    "why": "该选择忽略了本题已说明的条件。"
+   },
+   {
+    "text": "对。",
+    "why": "工作必要信息与私人细节可以区分。"
+   }
+  ],
+  "correct": [
+   1
+  ],
+  "steps": [
+   "主管询问你负责事项的完成状态，没有询问私人原因。",
+   "工作必要信息与私人细节可以区分。",
+   "保留隐私不等于回避必要职责。"
+  ],
+  "shift": "如涉及敏感资料或授权限制，只提供适用范围内信息。"
+ },
+ {
+  "id": "Q49",
+  "topic": "coordinate",
+  "kind": "single",
+  "scene": "两人排队时都认为自己先到，但暂时没有足够信息，现场有工作人员。",
+  "prompt": "哪种做法更合适？",
+  "options": [
+   {
+    "text": "说明可核对的情况，请工作人员按现场规则协调。",
+    "why": "信息不足时核对规则和事实，避免把推测变成争抢。"
+   },
+   {
+    "text": "认定双方都合理，就强行插队。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "靠提高音量证明自己正确。",
+    "why": "这没有回应当前具体需要，或超出了已有依据。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "两人排队时都认为自己先到，但暂时没有足够信息，现场有工作人员。",
+   "信息不足时核对规则和事实，避免把推测变成争抢。",
+   "多看视角，同时按事实与规则行动。"
+  ],
+  "shift": "若出现安全风险，先停止争抢并寻求现场帮助。"
+ },
+ {
+  "id": "Q50",
+  "topic": "repair",
+  "kind": "multi",
+  "scene": "你漏回一条已答应当天确认的工作消息，导致别人无法安排。",
+  "prompt": "哪些修复动作有用？",
+  "options": [
+   {
+    "text": "只说自己不是坏人，不给必要信息。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "补上状态，并协商接下来怎样衔接。",
+    "why": "具体补足信息和安排，比人格自证更对应影响。"
+   },
+   {
+    "text": "承认这条消息确实漏回。",
+    "why": "具体补足信息和安排，比人格自证更对应影响。"
+   }
+  ],
+  "correct": [
+   2,
+   1
+  ],
+  "steps": [
+   "你漏回一条已答应当天确认的工作消息，导致别人无法安排。",
+   "具体补足信息和安排，比人格自证更对应影响。",
+   "有责修复，不全盘否定自己。"
+  ],
+  "shift": "若尚不确定影响范围，先核对再提出补救。"
+ },
+ {
+  "id": "Q51",
+  "topic": "brief",
+  "kind": "boolean",
+  "scene": "调查时你有一个猜想，但后来找到与猜想不一致的记录。",
+  "prompt": "“应该保留相反记录，并重新检查判断。”对吗？",
+  "options": [
+   {
+    "text": "对。",
+    "why": "调查应允许证据改变判断，不能只证明自己原先正确。"
+   },
+   {
+    "text": "错，只保留支持原判断的信息。",
+    "why": "该选择忽略了本题已说明的条件。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "调查时你有一个猜想，但后来找到与猜想不一致的记录。",
+   "调查应允许证据改变判断，不能只证明自己原先正确。",
+   "假设接受检验，结论随证据更新。"
+  ],
+  "shift": "需要及时汇报时，可先说明已知、反证和未确认部分。"
+ },
+ {
+  "id": "Q52",
+  "topic": "silence",
+  "kind": "single",
+  "scene": "同事问你已经确认的值班时间，用于安排交接。",
+  "prompt": "怎样回应更合适？",
+  "options": [
+   {
+    "text": "按已确认排班直接说明时间。",
+    "why": "对方有合理交接需要，明确必要信息能帮助安排。"
+   },
+   {
+    "text": "以沉默是金为由一直不答。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "编一个时间防止对方了解安排。",
+    "why": "这没有回应当前具体需要，或超出了已有依据。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "同事问你已经确认的值班时间，用于安排交接。",
+   "对方有合理交接需要，明确必要信息能帮助安排。",
+   "该说时说清，不把停住当通用规则。"
+  ],
+  "shift": "若尚未确认，就说明需查表，而非随口保证。"
+ },
+ {
+  "id": "Q53",
+  "topic": "agency",
+  "kind": "multi",
+  "scene": "一次表达不顺后，你想练习，但今天精力有限。",
+  "prompt": "哪些选择可考虑？",
+  "options": [
+   {
+    "text": "要求自己一次解决所有沟通问题。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "休息后再自主选择是否继续。",
+    "why": "调整一个动作或休息，都可以符合现实能力和意愿。"
+   },
+   {
+    "text": "先挑一个具体点，做短暂纸面练习。",
+    "why": "调整一个动作或休息，都可以符合现实能力和意愿。"
+   }
+  ],
+  "correct": [
+   2,
+   1
+  ],
+  "steps": [
+   "一次表达不顺后，你想练习，但今天精力有限。",
+   "调整一个动作或休息，都可以符合现实能力和意愿。",
+   "小步实践，允许重复和休息。"
+  ],
+  "shift": "如果有紧急必要职责，先按实际安排处理并寻求支持。"
+ },
+ {
+  "id": "Q54",
+  "topic": "focus",
+  "kind": "boolean",
+  "scene": "你为了赶进度，收到已核实的安全问题反馈。",
+  "prompt": "“只要目标是按时完成，就可以忽略这个反馈。”对吗？",
+  "options": [
+   {
+    "text": "对，目标决定其他信息都不重要。",
+    "why": "该选择忽略了本题已说明的条件。"
+   },
+   {
+    "text": "错。",
+    "why": "安全事实可能改变必要行动，目标也需结合实际影响。"
+   }
+  ],
+  "correct": [
+   1
+  ],
+  "steps": [
+   "你为了赶进度，收到已核实的安全问题反馈。",
+   "安全事实可能改变必要行动，目标也需结合实际影响。",
+   "抓主线也要分清必要反馈。"
+  ],
+  "shift": "无根据的人格标签可以放下，但有具体风险要处理。"
+ },
+ {
+  "id": "Q55",
+  "topic": "choice",
+  "kind": "single",
+  "scene": "朋友没有得到你的额外帮助而失望，但你未承诺，也没有相关义务。",
+  "prompt": "你怎样看待这次拒绝？",
+  "options": [
+   {
+    "text": "可以理解对方感受，同时保留合理安排。",
+    "why": "感受可以存在，责任仍要看承诺和实际影响。"
+   },
+   {
+    "text": "对方失望就足以证明自己做错。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "为了不内疚，否认自己或对方所有感受。",
+    "why": "这没有回应当前具体需要，或超出了已有依据。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "朋友没有得到你的额外帮助而失望，但你未承诺，也没有相关义务。",
+   "感受可以存在，责任仍要看承诺和实际影响。",
+   "感受不是单独定责的依据。"
+  ],
+  "shift": "如果发现确有承诺或具体不当影响，再核对并修复。"
+ },
+ {
+  "id": "Q56",
+  "topic": "observe",
+  "kind": "multi",
+  "scene": "同事迟到了，你还不知道原因，但会议可以先进行其他议程。",
+  "prompt": "哪些做法较合适？",
+  "options": [
+   {
+    "text": "直接认定他故意不尊重大家。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "必要时确认他能否参加及影响。",
+    "why": "已知迟到与未知原因应分开，同时处理实际任务。"
+   },
+   {
+    "text": "先按可行议程推进。",
+    "why": "已知迟到与未知原因应分开，同时处理实际任务。"
+   }
+  ],
+  "correct": [
+   2,
+   1
+  ],
+  "steps": [
+   "同事迟到了，你还不知道原因，但会议可以先进行其他议程。",
+   "已知迟到与未知原因应分开，同时处理实际任务。",
+   "分清已知、未知与必要行动。"
+  ],
+  "shift": "如果他掌握的必要信息影响安全或关键决策，应及时联系协调。"
+ },
+ {
+  "id": "Q57",
+  "topic": "listen",
+  "kind": "boolean",
+  "scene": "对方明确说这个私人话题不想聊，你仍有点好奇。",
+  "prompt": "“可以尊重这个范围，换个双方愿意的话题。”对吗？",
+  "options": [
+   {
+    "text": "对。",
+    "why": "对方表达的分享范围可以作为收住话题的依据。"
+   },
+   {
+    "text": "错，好奇就应该追问到底。",
+    "why": "该选择忽略了本题已说明的条件。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "对方明确说这个私人话题不想聊，你仍有点好奇。",
+   "对方表达的分享范围可以作为收住话题的依据。",
+   "相关提问也要看分享意愿。"
+  ],
+  "shift": "如果是必要工作信息，另行说明用途和适用范围。"
+ },
+ {
+  "id": "Q58",
+  "topic": "appreciate",
+  "kind": "single",
+  "scene": "同事把检查清单写得很清楚，你确实少漏了两个步骤。",
+  "prompt": "哪种感谢更具体？",
+  "options": [
+   {
+    "text": "“清单把先后列清楚了，我少漏了两步，谢谢。”",
+    "why": "可观察行为与实际帮助相连，感谢更准确。"
+   },
+   {
+    "text": "“你既然这么厉害，以后都必须帮我检查。”",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "“都是你的功劳”，即使其他人也参与了。",
+    "why": "这没有回应当前具体需要，或超出了已有依据。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "同事把检查清单写得很清楚，你确实少漏了两个步骤。",
+   "可观察行为与实际帮助相连，感谢更准确。",
+   "夸具体帮助，不附加额外义务。"
+  ],
+  "shift": "若帮助来自多人，应按已知贡献分别认可。"
+ },
+ {
+  "id": "Q59",
+  "topic": "privacy",
+  "kind": "multi",
+  "scene": "有人以大家都说了为由，追问你不想分享的私人收入。",
+  "prompt": "哪些选择合理？",
+  "options": [
+   {
+    "text": "因为别人分享了，就认为自己必须交换。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "愿意时把话题转回双方都愿意聊的内容。",
+    "why": "他人自愿披露不自动产生你的交换义务。"
+   },
+   {
+    "text": "说明这部分暂时不方便聊。",
+    "why": "他人自愿披露不自动产生你的交换义务。"
+   }
+  ],
+  "correct": [
+   2,
+   1
+  ],
+  "steps": [
+   "有人以大家都说了为由，追问你不想分享的私人收入。",
+   "他人自愿披露不自动产生你的交换义务。",
+   "自愿分享和必要披露需分开。"
+  ],
+  "shift": "若是适用流程中的必要申报，应核对对象、用途和范围。"
+ },
+ {
+  "id": "Q60",
+  "topic": "coordinate",
+  "kind": "boolean",
+  "scene": "原先约定你先用设备，但同事有已核实的紧急安全检查，而且先后可调整。",
+  "prompt": "“应重新协调先后，而不机械坚持原顺序。”对吗？",
+  "options": [
+   {
+    "text": "错，约定后任何新情况都不能考虑。",
+    "why": "该选择忽略了本题已说明的条件。"
+   },
+   {
+    "text": "对。",
+    "why": "明确安全需要是可以改变安排的重要条件。"
+   }
+  ],
+  "correct": [
+   1
+  ],
+  "steps": [
+   "原先约定你先用设备，但同事有已核实的紧急安全检查，而且先后可调整。",
+   "明确安全需要是可以改变安排的重要条件。",
+   "新条件会改变优先顺序。"
+  ],
+  "shift": "如果没有紧急需要，仍可以按原约定或协商调整。"
+ },
+ {
+  "id": "Q61",
+  "topic": "repair",
+  "kind": "single",
+  "scene": "你发现刚才把对方的意思听反了，对方已提供清楚解释。",
+  "prompt": "现在怎样继续？",
+  "options": [
+   {
+    "text": "承认听岔，按新信息更正并回应具体事项。",
+    "why": "已有澄清可用于修正判断，具体调整能继续对话。"
+   },
+   {
+    "text": "坚持最初理解以免显得没面子。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "反复证明自己没有恶意，始终不回应事项。",
+    "why": "这没有回应当前具体需要，或超出了已有依据。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "你发现刚才把对方的意思听反了，对方已提供清楚解释。",
+   "已有澄清可用于修正判断，具体调整能继续对话。",
+   "有新信息就修正，不固守误解。"
+  ],
+  "shift": "如果解释仍有矛盾，可问清具体处，不必假装已经明白。"
+ },
+ {
+  "id": "Q62",
+  "topic": "brief",
+  "kind": "multi",
+  "scene": "负责人需要马上安排工作，但问题原因还没查完。",
+  "prompt": "哪些内容可以先报告？",
+  "options": [
+   {
+    "text": "为显得确定，选一个猜测当原因。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "尚未确认的部分和可行的备选安排。",
+    "why": "先报事实、未知与选择，能支持及时安排而不伪造结论。"
+   },
+   {
+    "text": "已确认的当前风险。",
+    "why": "先报事实、未知与选择，能支持及时安排而不伪造结论。"
+   }
+  ],
+  "correct": [
+   2,
+   1
+  ],
+  "steps": [
+   "负责人需要马上安排工作，但问题原因还没查完。",
+   "先报事实、未知与选择，能支持及时安排而不伪造结论。",
+   "原因未明不等于必须一直不报告。"
+  ],
+  "shift": "原因确认后及时补充，判断变化也要说明。"
+ },
+ {
+  "id": "Q63",
+  "topic": "silence",
+  "kind": "boolean",
+  "scene": "普通闲聊自然停下，没有新请求。",
+  "prompt": "“不用每次都找新话题填满空白。”对吗？",
+  "options": [
+   {
+    "text": "对。",
+    "why": "暂时安静不证明沟通失败，也没有新增回应义务。"
+   },
+   {
+    "text": "错，安静就表示交流失败。",
+    "why": "该选择忽略了本题已说明的条件。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "普通闲聊自然停下，没有新请求。",
+   "暂时安静不证明沟通失败，也没有新增回应义务。",
+   "可以停，也可以按意愿继续。"
+  ],
+  "shift": "若你愿意继续，可自然接一句；必要请求出现时需回应。"
+ },
+ {
+  "id": "Q64",
+  "topic": "agency",
+  "kind": "single",
+  "scene": "对方持续对你作人格贬低，没有提供具体工作问题。",
+  "prompt": "哪种行动较合适？",
+  "options": [
+   {
+    "text": "说明边界，必要时记录事实并寻求适当支持。",
+    "why": "积极行动包括边界和支持，不等于把一切揽到自己身上。"
+   },
+   {
+    "text": "认为只能改变自己的心态，不能设界。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "反过来贬低对方整个人。",
+    "why": "这没有回应当前具体需要，或超出了已有依据。"
+   }
+  ],
+  "correct": [
+   0
+  ],
+  "steps": [
+   "对方持续对你作人格贬低，没有提供具体工作问题。",
+   "积极行动包括边界和支持，不等于把一切揽到自己身上。",
+   "看事实、分责任，再选可行一步。"
+  ],
+  "shift": "若出现可核实的具体失误，可以同时改进那一件事。"
+ },
+ {
+  "id": "Q65",
+  "topic": "focus",
+  "kind": "multi",
+  "scene": "接班人抱怨找不到你发的文件，你核对后发现链接权限未开。",
+  "prompt": "哪些行动有助于完成交接？",
+  "options": [
+   {
+    "text": "已经发送就不再处理。",
+    "why": "这忽略了题目中的必要条件，或把猜测、压力当作依据。"
+   },
+   {
+    "text": "确认接班人能正常访问和使用。",
+    "why": "交接目标包括可访问和可使用，权限问题是具体反馈。"
+   },
+   {
+    "text": "核实授权范围，并按允许范围调整访问。",
+    "why": "交接目标包括可访问和可使用，权限问题是具体反馈。"
+   }
+  ],
+  "correct": [
+   2,
+   1
+  ],
+  "steps": [
+   "接班人抱怨找不到你发的文件，你核对后发现链接权限未开。",
+   "交接目标包括可访问和可使用，权限问题是具体反馈。",
+   "完成动作与达到实际目标要区分。"
+  ],
+  "shift": "如果已确认可用且没有新事实，可以不继续无关争辩。"
+ },
+ {
+  "id": "Q66",
+  "topic": "choice",
+  "kind": "boolean",
+  "scene": "你已获得指定范围的授权，人手和资料也已确认到位。",
+  "prompt": "“可以承担已确认范围内的具体责任。”对吗？",
+  "options": [
+   {
+    "text": "错，任何承诺都不该作。",
+    "why": "该选择忽略了本题已说明的条件。"
+   },
+   {
+    "text": "对。",
+    "why": "可执行的职责内承诺可以承担，范围应清楚。"
+   }
+  ],
+  "correct": [
+   1
+  ],
+  "steps": [
+   "你已获得指定范围的授权，人手和资料也已确认到位。",
+   "可执行的职责内承诺可以承担，范围应清楚。",
+   "负责不等于无边界兜底。"
+  ],
+  "shift": "超出授权或资源不明时，先核对再承诺。"
  }
 ];
 const QUICK_KEY='response-autonomy-quick-v1';
+const QUICK_SEEN_KEY='response-autonomy-quick-seen-v1';
+let quickSeenOK=true;
+function quickSeenRead(){
+ try{const raw=localStorage.getItem(QUICK_SEEN_KEY);if(!raw)return {};if(raw.length>20000)return {};const o=JSON.parse(raw);if(!o||typeof o!=='object'||Array.isArray(o))return {};return Object.fromEntries(QUICK_BANK.filter(q=>Number.isFinite(o[q.id])&&o[q.id]>0&&o[q.id]<=Date.now()+86400000).map(q=>[q.id,o[q.id]]))}catch(e){quickSeenOK=false;return {}}
+}
+function quickTake(pool,count){const seen=quickSeenRead();return quickShuffle(pool).sort((a,b)=>(seen[a.id]||0)-(seen[b.id]||0)).slice(0,count)}
+function quickMarkSeen(id){try{const seen=quickSeenRead();seen[id]=Date.now();localStorage.setItem(QUICK_SEEN_KEY,JSON.stringify(seen));quickSeenOK=true}catch(e){quickSeenOK=false}}
+function quickSeenClear(){try{localStorage.removeItem(QUICK_SEEN_KEY);quickSeenOK=true}catch(e){quickSeenOK=false}}
+function quickResetSeen(){quickSeenClear();renderQuickPractice()}
 const QUICK_KINDS={single:'单选题',multi:'多选题',boolean:'判断题'};
 let quickStorageOK=true,quickState=quickRead();
 function quickQuestion(id){return QUICK_BANK.find(q=>q.id===id)}
@@ -1038,14 +2004,14 @@ function quickStart(ids){
  if(ids)chosen=ids.filter(id=>quickQuestion(id));
  else{
   const pool=QUICK_BANK.filter(q=>(topic==='all'||q.topic===topic)&&(kind==='all'||q.kind===kind));
-  chosen=kind==='all'?Object.keys(QUICK_KINDS).flatMap(k=>quickShuffle(pool.filter(q=>q.kind===k)).slice(0,2)).map(q=>q.id):quickShuffle(pool).slice(0,6).map(q=>q.id);
+  chosen=kind==='all'?Object.keys(QUICK_KINDS).flatMap(k=>quickTake(pool.filter(q=>q.kind===k),2)).map(q=>q.id):quickTake(pool,6).map(q=>q.id);
  }
  if(!chosen.length)return;
  quickState={version:1,topic,kind,ids:quickShuffle([...new Set(chosen)]).slice(0,6),step:0,selected:[],answers:[]};quickSave();renderQuickPractice();
 }
 function quickSubmit(){
  const s=quickState,q=s&&quickQuestion(s.ids[s.step]);if(!q||s.answers[s.step]||!quickValidPicks(q,s.selected))return;
- s.answers.push({id:q.id,picks:s.selected.slice()});quickSave();renderQuickPractice();
+ s.answers.push({id:q.id,picks:s.selected.slice()});quickMarkSeen(q.id);quickSave();renderQuickPractice();
 }
 function quickNext(){const s=quickState;if(!s||!s.answers[s.step])return;s.step++;s.selected=[];quickSave();renderQuickPractice()}
 function quickExplanation(q){
@@ -1053,7 +2019,8 @@ function quickExplanation(q){
 }
 function renderQuickPractice(){
  const s=quickState,done=s&&s.step===s.ids.length;
- const setup=`<label for="quickTopic">想练哪一类？</label><select id="quickTopic"><option value="all">全部主题混合</option>${COMMUNICATION_LESSONS.map(l=>`<option value="${l.id}" ${s?.topic===l.id?'selected':''}>${safe(l.title)}</option>`).join('')}</select><label for="quickKind">题型</label><select id="quickKind"><option value="all">单选、多选、判断混合</option>${Object.entries(QUICK_KINDS).map(([key,label])=>`<option value="${key}" ${s?.kind===key?'selected':''}>${label}</option>`).join('')}</select><p class="small muted">${QUICK_BANK.length}道本地题，无需生成。每轮最多6题，所选范围不足6题时全部练；多选需选全且不多选。</p><button class="primary" id="quickStart">${done?'再开一轮':'开始快速刷题'}</button>`;
+ const setup=`<label for="quickTopic">想练哪一类？</label><select id="quickTopic"><option value="all">全部主题混合</option>${COMMUNICATION_LESSONS.map(l=>`<option value="${l.id}" ${s?.topic===l.id?'selected':''}>${safe(l.title)}</option>`).join('')}</select><label for="quickKind">题型</label><select id="quickKind"><option value="all">单选、多选、判断混合</option>${Object.entries(QUICK_KINDS).map(([key,label])=>`<option value="${key}" ${s?.kind===key?'selected':''}>${label}</option>`).join('')}</select><p class="small muted">${QUICK_BANK.length}道本地题，无需生成。每轮最多6题，在所选范围内优先未练题，其次最久未练；多选需选全且不多选。已提交题号仅在本机记忆，不改复习排程、不进入备份或云同步。</p><button class="primary" id="quickStart">${done?'再开一轮':'开始快速刷题'}</button>`;
+ const seen=quickSeenRead();
  let body;
  if(!s)body=setup;
  else if(done){
@@ -1063,7 +2030,8 @@ function renderQuickPractice(){
   const q=quickQuestion(s.ids[s.step]),lesson=COMMUNICATION_LESSONS.find(l=>l.id===q.topic),answer=s.answers[s.step],ok=answer&&quickCorrect(q,answer.picks);
   body=`<div class="split"><span class="pill">${QUICK_KINDS[q.kind]}</span><span>第 ${s.step+1}/${s.ids.length} 题</span></div><p class="scene">${safe(q.scene||lesson.scene)}</p><h3 id="quickPrompt" data-practice-focus>${safe(q.prompt)}</h3><p class="small muted">${q.kind==='multi'?'可选多个；选全且不多选。':'只选一个。'} 选好后点“提交答案”，再看解释。</p><div class="quick-options" role="group" aria-labelledby="quickPrompt">${q.options.map((o,n)=>`<button class="option quick-choice ${s.selected.includes(n)?'quick-selected':''}" data-quick-choice="${n}" aria-pressed="${s.selected.includes(n)}" ${answer?'disabled':''}>${String.fromCharCode(65+n)}. ${safe(o.text)}${answer?`<span class="quick-choice-note">${s.selected.includes(n)?'你的选择 · ':''}${q.correct.includes(n)?'本题应选':'本题不选'}</span>`:''}</button>`).join('')}</div>${answer?`<h3 role="status">${ok?'这次选择与本题条件一致':'这题有个地方值得再看看'}</h3>${quickExplanation(q)}`:''}<div class="actions"><button class="primary" id="${answer?'quickNext':'quickSubmit'}" ${!answer&&!s.selected.length?'disabled':''}>${answer?(s.step===s.ids.length-1?'看本轮小结':'下一题'):'提交答案 · 看解释'}</button></div>`;
  }
- root.innerHTML=`<section class="panel quick-panel"><h2>快速刷题 · 选完马上看懂</h2><p class="small muted">先看情境，再作选择。每题都有答案、简明理由和条件变化提醒；不计时、不扣学习分。</p>${body}<p class="small muted" id="quickStatus" role="status">${quickStorageMessage()}</p>${s?'<button class="ghost" id="quickClearRound">清除本轮暂存</button>':''}</section>`;
+ root.innerHTML=`<section class="panel quick-panel"><h2>快速刷题 · 选完马上看懂</h2><p class="small muted">先看情境，再作选择。每题都有答案、简明理由和条件变化提醒；不计时、不扣学习分。</p>${body}<p class="small muted" id="quickExposure">本机全部题库已练 ${Object.keys(seen).length}/${QUICK_BANK.length} 题。${quickSeenOK?'题库有限，练完后会轮换复练；错题重练仍可主动重复。':'本机记题不可用，可能较早重复；当前练习仍可继续。'}</p><button class="ghost" id="quickResetSeen">重新开始题目轮换（不清学习记录）</button><p class="small muted" id="quickStatus" role="status">${quickStorageMessage()}</p>${s?'<button class="ghost" id="quickClearRound">清除本轮暂存</button>':''}</section>`;
+ document.getElementById('quickResetSeen').onclick=quickResetSeen;
  const clear=document.getElementById('quickClearRound');if(clear)clear.onclick=()=>{quickClear();renderQuickPractice()};
  const start=document.getElementById('quickStart');if(start)firstTap(start,()=>quickStart());
  root.querySelectorAll('[data-quick-choice]').forEach(button=>button.onclick=()=>{
