@@ -165,7 +165,7 @@ async function main(){
   assert.equal(await p.locator('#quickFeedback ol li').count(),3);await p.evaluate(()=>{quickNext();quickNext()});assert.equal(await p.evaluate('quickState.step'),1);
   assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
- await test('all 66 quick questions give answers and explanations without scheduling a review',async()=>{
+ await test('all 84 quick questions give answers and explanations without scheduling a review',async()=>{
   const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#quickHome');
   const ids=await p.evaluate('QUICK_BANK.map(q=>q.id)');for(const id of ids){
    await p.evaluate(id=>quickStart([id]),id);const picks=await p.evaluate(id=>quickQuestion(id).correct,id);
@@ -299,7 +299,7 @@ async function main(){
  });
  await test('title footer and runtime version agree and update checking preserves local records',async()=>{
   const {c,p}=await fresh();assert.ok((await p.title()).includes(await p.evaluate('APP_VERSION')));assert.ok((await p.locator('.foot').textContent()).includes(await p.evaluate('APP_VERSION')));
-  await p.click('[data-nav=settings]');assert.match(await p.locator('#runtimeVersion').textContent(),/0\.16\.0/);const before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#checkAppUpdate');await p.waitForFunction('!document.getElementById("checkAppUpdate").disabled');assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+  await p.click('[data-nav=settings]');assert.match(await p.locator('#runtimeVersion').textContent(),/0\.17\.0/);const before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#checkAppUpdate');await p.waitForFunction('!document.getElementById("checkAppUpdate").disabled');assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
  await test('quick landing and summary keep navigation while explicit practice can pause and resume',async()=>{
   const {c,p}=await fresh();await p.click('[data-nav=quick]');
@@ -332,7 +332,7 @@ async function main(){
   for(const size of [{width:320,height:568},{width:844,height:390}]){await p.setViewportSize(size);await p.addStyleTag({content:'body,button{font-size:20px}'});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))}
   assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
- await test('all six principle pairs reuse two known questions and reveal comparison only after both submissions',async()=>{
+ await test('all nine principle pairs reuse two known questions and reveal comparison only after both submissions',async()=>{
   const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');const ids=await p.evaluate('PRACTICE_PRINCIPLES.map(p=>p.id)');
   for(const id of ids){await p.evaluate(id=>{dailyPrinciple=()=>PRACTICE_PRINCIPLES.find(p=>p.id===id);setPage('home')},id);await p.click('[data-principle-pair]');
    assert.equal(await p.evaluate('quickState.ids.length'),2);assert.equal(await p.locator('.nav').isVisible(),false);assert.equal(await p.locator('#principleComparison').count(),0);
@@ -348,6 +348,13 @@ async function main(){
   assert.match(await p.locator('[data-principle-pair]').textContent(),/先继续/);await p.click('[data-principle-pair]');assert.equal(await p.evaluate('JSON.stringify(quickState)'),state);assert.ok(await p.locator('#quickResume').isVisible());
   await p.click('#quickResume');assert.deepEqual(await p.evaluate('quickState.selected'),[0]);assert.equal(await p.evaluate('JSON.stringify(communicationProgress)'),draft);await c.close();
  });
+ await test('upgrade keeps an old course draft and 66-question round while exposing new optional lessons',async()=>{
+  const {c,p}=await fresh();await p.evaluate(()=>{sessionStorage.setItem(COMMUNICATION_KEY,JSON.stringify({selected:'observe',observe:{stage:1,answers:['旧版原话','旧版第二轮草稿'],variant:'urgent'}}));sessionStorage.setItem(QUICK_KEY,JSON.stringify({version:1,topic:'all',kind:'all',ids:['Q01','Q66'],step:0,selected:[1],answers:[]}));});
+  await p.reload();const before=await p.evaluate('localStorage.getItem(STORE)');await p.click('[data-nav=communication]');assert.equal(await p.inputValue('#communicationLesson'),'observe');await p.click('#communicationStart');assert.equal(await p.inputValue('#communicationOwn'),'旧版第二轮草稿');assert.equal(await p.evaluate('communicationProgress.observe.answers[0]'),'旧版原话');
+  await p.click('#practiceBack');await p.click('[data-nav=quick]');await p.click('#quickResume');assert.deepEqual(await p.evaluate('quickState.ids'),['Q01','Q66']);assert.deepEqual(await p.evaluate('quickState.selected'),[1]);await p.click('#practiceBack');await p.click('#quickClearRound');
+  for(const topic of ['review','support','environment']){await p.selectOption('#quickTopic',topic);await p.click('#quickStart');assert.equal(await p.evaluate('quickState.ids.length'),6);assert.deepEqual((await p.evaluate('quickState.ids.map(id=>quickQuestion(id).kind)')).sort(),['boolean','boolean','multi','multi','single','single']);await p.click('#practiceBack');await p.click('#quickClearRound')}
+  assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+ });
  await test('installed shell opens offline and keeps unrelated caches',async()=>{
   const {c,p}=await fresh({serviceWorkers:'allow'});
   await p.evaluate(async()=>{await navigator.serviceWorker.ready;await caches.open('unrelated-fixture-cache')});
@@ -359,7 +366,7 @@ async function main(){
   assert.equal(server.listening,false);
   await p.reload({waitUntil:'commit'});
   await p.waitForFunction(()=>typeof APP_VERSION!=='undefined'&&!!document.querySelector('#daily')&&window.beforeOfflineReload===undefined);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.16.0');
+  assert.equal(await p.evaluate('APP_VERSION'),'0.17.0');
   assert.equal(await p.locator('#daily').count(),1);
   assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));
   await c.close();
