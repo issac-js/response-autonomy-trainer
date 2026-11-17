@@ -299,7 +299,7 @@ async function main(){
  });
  await test('title footer and runtime version agree and update checking preserves local records',async()=>{
   const {c,p}=await fresh();assert.ok((await p.title()).includes(await p.evaluate('APP_VERSION')));assert.ok((await p.locator('.foot').textContent()).includes(await p.evaluate('APP_VERSION')));
-  await p.click('[data-nav=settings]');assert.match(await p.locator('#runtimeVersion').textContent(),/0\.15\.1/);const before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#checkAppUpdate');await p.waitForFunction('!document.getElementById("checkAppUpdate").disabled');assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+  await p.click('[data-nav=settings]');assert.match(await p.locator('#runtimeVersion').textContent(),/0\.16\.0/);const before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#checkAppUpdate');await p.waitForFunction('!document.getElementById("checkAppUpdate").disabled');assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
  await test('quick landing and summary keep navigation while explicit practice can pause and resume',async()=>{
   const {c,p}=await fresh();await p.click('[data-nav=quick]');
@@ -323,6 +323,31 @@ async function main(){
   for(const viewport of [{width:320,height:568},{width:844,height:390}]){await p.setViewportSize(viewport);await p.addStyleTag({content:'body,button{font-size:20px}'});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.ok(await p.locator('.nav').isVisible())}
   await p.screenshot({path:path.join(outDir,'navigation-reading-landscape.png')});await c.close();
  });
+ await test('daily reminder is optional, escaped and opens the existing independent lesson without learning writes',async()=>{
+  const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');
+  assert.equal(await p.locator('#dailyPrinciple').count(),1);assert.equal(await p.locator('#dailyPrinciple details').getAttribute('open'),null);assert.ok(await p.locator('.nav').isVisible());
+  await p.locator('#dailyPrinciple summary').click();assert.match(await p.locator('#dailyPrinciple').innerText(),/适用时/);assert.match(await p.locator('#dailyPrinciple').innerText(),/换个条件/);
+  const topic=await p.evaluate('dailyPrinciple().topic');await p.click('[data-principle-lesson]');assert.equal(await p.inputValue('#communicationLesson'),topic);assert.ok(await p.locator('.nav').isVisible());assert.equal(await p.locator('#communicationOwn').isVisible(),false);
+  await p.evaluate(()=>{dailyPrinciple().memory='<img src=x onerror=window.bad=true>';renderCommunication()});assert.equal(await p.locator('#dailyPrinciple img').count(),0);assert.equal(await p.evaluate('window.bad'),undefined);
+  for(const size of [{width:320,height:568},{width:844,height:390}]){await p.setViewportSize(size);await p.addStyleTag({content:'body,button{font-size:20px}'});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))}
+  assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+ });
+ await test('all six principle pairs reuse two known questions and reveal comparison only after both submissions',async()=>{
+  const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');const ids=await p.evaluate('PRACTICE_PRINCIPLES.map(p=>p.id)');
+  for(const id of ids){await p.evaluate(id=>{dailyPrinciple=()=>PRACTICE_PRINCIPLES.find(p=>p.id===id);setPage('home')},id);await p.click('[data-principle-pair]');
+   assert.equal(await p.evaluate('quickState.ids.length'),2);assert.equal(await p.locator('.nav').isVisible(),false);assert.equal(await p.locator('#principleComparison').count(),0);
+   for(let i=0;i<2;i++){const picks=await p.evaluate('quickQuestion(quickState.ids[quickState.step]).correct');for(const n of picks)await p.click(`[data-quick-choice="${n}"]`);await p.click('#quickSubmit');assert.equal(await p.locator('#principleComparison').count(),0);await p.click('#quickNext')}
+   assert.ok(await p.locator('.nav').isVisible());assert.ok(await p.locator('#principleComparison').isVisible());assert.match(await p.locator('#principleComparison').innerText(),/可选的下一步/);
+   await p.locator('#principleComparison [data-principle-lesson]').click();assert.ok(await p.locator('.nav').isVisible());await p.click('#communicationStart');assert.ok(await p.locator('#communicationOwn').isVisible());await p.fill('#communicationOwn','我按事实与职责选择一个动作');await p.click('#practiceBack');
+  }
+  assert.equal(await p.evaluate('data.history.length'),0);assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await p.screenshot({path:path.join(outDir,'daily-principle-reading.png'),fullPage:false});await c.close();
+ });
+ await test('daily pair entry never replaces unfinished choices or changes course drafts',async()=>{
+  const {c,p}=await fresh();await p.evaluate(()=>{communicationLesson='choice';communicationProgress.choice={stage:1,answers:['原有第一轮','原有第二轮草稿'],variant:'promise'};setPage('quick');quickStart(['Q11','Q12'])});
+  await p.click('[data-quick-choice="0"]');const state=await p.evaluate('JSON.stringify(quickState)'),draft=await p.evaluate('JSON.stringify(communicationProgress)');await p.click('#practiceBack');await p.click('[data-nav=home]');
+  assert.match(await p.locator('[data-principle-pair]').textContent(),/先继续/);await p.click('[data-principle-pair]');assert.equal(await p.evaluate('JSON.stringify(quickState)'),state);assert.ok(await p.locator('#quickResume').isVisible());
+  await p.click('#quickResume');assert.deepEqual(await p.evaluate('quickState.selected'),[0]);assert.equal(await p.evaluate('JSON.stringify(communicationProgress)'),draft);await c.close();
+ });
  await test('installed shell opens offline and keeps unrelated caches',async()=>{
   const {c,p}=await fresh({serviceWorkers:'allow'});
   await p.evaluate(async()=>{await navigator.serviceWorker.ready;await caches.open('unrelated-fixture-cache')});
@@ -334,7 +359,7 @@ async function main(){
   assert.equal(server.listening,false);
   await p.reload({waitUntil:'commit'});
   await p.waitForFunction(()=>typeof APP_VERSION!=='undefined'&&!!document.querySelector('#daily')&&window.beforeOfflineReload===undefined);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.15.1');
+  assert.equal(await p.evaluate('APP_VERSION'),'0.16.0');
   assert.equal(await p.locator('#daily').count(),1);
   assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));
   await c.close();
