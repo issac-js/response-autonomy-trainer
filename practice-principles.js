@@ -17,7 +17,8 @@ function dailyPrinciple(day=TODAY()){
  if(date.getUTCFullYear()!==+match[1]||date.getUTCMonth()!==+match[2]-1||date.getUTCDate()!==+match[3])return PRACTICE_PRINCIPLES[0];
  return PRACTICE_PRINCIPLES[((stamp/86400000)%PRACTICE_PRINCIPLES.length+PRACTICE_PRINCIPLES.length)%PRACTICE_PRINCIPLES.length];
 }
-function principleForRound(s){return s&&[...PRACTICE_PRINCIPLES,...PACE_GUIDES].find(p=>s.ids.length===p.pair.length&&p.pair.every(id=>s.ids.includes(id)))}
+function allPracticePairs(){return [...PRACTICE_PRINCIPLES,...PACE_GUIDES,...EXTRA_PRACTICE_PAIRS]}
+function principleForRound(s){return s&&allPracticePairs().find(p=>s.ids.length===p.pair.length&&p.pair.every(id=>s.ids.includes(id)))}
 function renderDailyPrinciple(){
  const p=dailyPrinciple(),pending=typeof quickState!=='undefined'&&quickState&&quickState.step<quickState.ids.length;
  return `<section class="panel" id="dailyPrinciple"><h2>今天只记一句 · 可跳过</h2><p class="learning-memory">${safe(p.memory)}</p><p class="small muted">${safe(p.title)}。不用打卡，也不必逐句检查自己。</p><details><summary>什么时候用，什么时候要调整？</summary><p><b>适用时：</b>${safe(p.when)}</p><p><b>换个条件：</b>${safe(p.boundary)}</p><p><b>愿意时只试一步：</b>${safe(p.action)}</p></details><div class="actions"><button class="secondary" data-principle-pair="${safe(p.id)}">${pending?'先继续上次刷题':'用两道题分清条件'}</button><button class="ghost" data-principle-lesson="${safe(p.topic)}">用自己的话练表达</button></div><p class="small muted">${pending?'已有未完成快练，这里先带你回继续入口，不替换本轮。':'两题复用现有题库，不生成新题；每题提交后看解释。'}练习可以重复、跳过或休息，不以情绪归零、对方满意作为达标条件。</p></section>`;
@@ -25,7 +26,7 @@ function renderDailyPrinciple(){
 function bindDailyPrinciple(){
  root.querySelectorAll('[data-pace-topic]').forEach(button=>button.onclick=()=>openPaceGuide(button.dataset.paceTopic));
  root.querySelectorAll('[data-principle-pair]').forEach(button=>button.onclick=()=>{
-  const p=[...PRACTICE_PRINCIPLES,...PACE_GUIDES].find(p=>p.id===button.dataset.principlePair);if(!p)return;
+  const p=allPracticePairs().find(p=>p.id===button.dataset.principlePair);if(!p)return;
   const pending=quickState&&quickState.step<quickState.ids.length;
   setPage('quick');if(page==='quick'&&!pending)quickStart(p.pair);
  });
@@ -51,4 +52,14 @@ function openPaceGuide(topic='observe'){
  if(!PACE_GUIDES.some(p=>p.topic===topic))return;
  communicationLesson=topic;communicationSave();setPage('communication');
  const guide=document.getElementById('paceGuide');if(guide){guide.open=true;requestAnimationFrame(()=>guide.scrollIntoView({block:'start'}))}
+}
+
+// Extra case pairs share the same registration and unfinished-round protection.
+const EXTRA_PRACTICE_PAIRS=[
+ {id:'collaboration-authority',topic:'clarify',title:'需要确认，还是已有授权？',memory:'讲清一个依据，商量一个下一步。',pair:['Q92','Q94'],contrast:'一题已有明确确认要求，应说明规则并商量联系与跟进；另一题书面授权已覆盖且条件满足，可以据此处理并同步分工。是否确认取决于规则、权限和风险，不从反问猜动机。',action:'在低风险协作或纸面模拟中，说清一个关键顾虑或依据，商量谁做什么；信息够用后即可结束重复解释。'}
+];
+function renderLessonPair(topic){
+ const p=EXTRA_PRACTICE_PAIRS.find(p=>p.topic===topic);if(!p)return '';
+ const pending=quickState&&quickState.step<quickState.ids.length;
+ return `<details id="lessonPair"><summary>用两种权限条件练判断（可选）</summary><p class="learning-memory">${safe(p.memory)}</p><p>一次反问不能证明对方拒绝或已有办法。先核对疑问，讲清必要依据；规则与授权不同，下一步也应不同。</p><button class="secondary" data-principle-pair="${safe(p.id)}">${pending?'先继续上次刷题':'练需要确认与已有授权两题'}</button><p class="small muted">${pending?'已有未完成快练，先带你回继续入口，不替换本轮。':'每题先答后解释，完整两题后再看条件对照。'}也可以直接开始下方自主表达，不用全部做完。</p></details>`;
 }

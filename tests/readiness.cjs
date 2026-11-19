@@ -165,7 +165,7 @@ async function main(){
   assert.equal(await p.locator('#quickFeedback ol li').count(),3);await p.evaluate(()=>{quickNext();quickNext()});assert.equal(await p.evaluate('quickState.step'),1);
   assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
- await test('all 90 quick questions give answers and explanations without scheduling a review',async()=>{
+ await test('all 96 quick questions give answers and explanations without scheduling a review',async()=>{
   const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#quickHome');
   const ids=await p.evaluate('QUICK_BANK.map(q=>q.id)');for(const id of ids){
    await p.evaluate(id=>quickStart([id]),id);const picks=await p.evaluate(id=>quickQuestion(id).correct,id);
@@ -299,7 +299,7 @@ async function main(){
  });
  await test('title footer and runtime version agree and update checking preserves local records',async()=>{
   const {c,p}=await fresh();assert.ok((await p.title()).includes(await p.evaluate('APP_VERSION')));assert.ok((await p.locator('.foot').textContent()).includes(await p.evaluate('APP_VERSION')));
-  await p.click('[data-nav=settings]');assert.match(await p.locator('#runtimeVersion').textContent(),/0\.18\.0/);const before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#checkAppUpdate');await p.waitForFunction('!document.getElementById("checkAppUpdate").disabled');assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+  await p.click('[data-nav=settings]');assert.match(await p.locator('#runtimeVersion').textContent(),/0\.19\.0/);const before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#checkAppUpdate');await p.waitForFunction('!document.getElementById("checkAppUpdate").disabled');assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
  await test('quick landing and summary keep navigation while explicit practice can pause and resume',async()=>{
   const {c,p}=await fresh();await p.click('[data-nav=quick]');
@@ -375,6 +375,19 @@ async function main(){
   const state=await p.evaluate('JSON.stringify(quickState)'),draft=await p.evaluate('JSON.stringify(communicationProgress.observe)');await p.click('#practiceBack');await p.click('[data-nav=home]');await p.click('#paceHome');assert.equal(await p.evaluate('JSON.stringify(communicationProgress.observe)'),draft);
   assert.match(await p.locator('#paceGuide [data-principle-pair]').textContent(),/先继续/);await p.locator('#paceGuide [data-principle-pair]').click();assert.equal(await p.evaluate('JSON.stringify(quickState)'),state);await p.click('#quickResume');assert.deepEqual(await p.evaluate('quickState.selected'),[1]);await p.reload();await p.click('[data-nav=quick]');await p.click('#quickResume');assert.equal(await p.evaluate('JSON.stringify(quickState)'),state);await c.close();
  });
+ await test('collaboration case compares authority conditions then preserves the first reply while changing the rule',async()=>{
+  const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('[data-nav=communication]');await p.selectOption('#communicationLesson','clarify');assert.ok(await p.locator('.nav').isVisible());await p.locator('#lessonPair summary').click();await p.locator('#lessonPair [data-principle-pair]').click();
+  assert.deepEqual((await p.evaluate('quickState.ids')).sort(),['Q92','Q94']);for(let i=0;i<2;i++){const picks=await p.evaluate('quickQuestion(quickState.ids[quickState.step]).correct');for(const n of picks)await p.click(`[data-quick-choice="${n}"]`);await p.click('#quickSubmit');assert.equal(await p.locator('#principleComparison').count(),0);await p.click('#quickNext')}
+  assert.match(await p.locator('#principleComparison').textContent(),/书面授权/);await p.locator('#principleComparison [data-principle-lesson]').click();assert.equal(await p.inputValue('#communicationLesson'),'clarify');await p.click('#communicationStart');await p.fill('#communicationOwn','我拿不准授权范围，先对一下依据，再商量谁跟进');await p.click('#communicationCommit');
+  for(const variant of ['approval','delegated']){await p.selectOption('#communicationVariant',variant);await p.fill('#communicationOwn',variant==='approval'?'按这条规则需要先确认，我们商量谁联系':'授权已经覆盖，可以据此处理并讲清分工');await p.click('#communicationCommit');await p.locator('#communicationGuide summary').click();assert.equal(await p.locator('#communicationGuide h3').count(),6);assert.equal(await p.evaluate('communicationProgress.clarify.answers[0]'),'我拿不准授权范围，先对一下依据，再商量谁跟进');assert.ok(await p.locator('.nav').isVisible());await p.click('#communicationAgain')}
+  assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);assert.equal(await p.evaluate('data.history.length'),0);await c.close();
+ });
+ await test('collaboration entry protects pending choices and fits narrow enlarged and landscape reading',async()=>{
+  const {c,p}=await fresh();await p.evaluate(()=>{setPage('quick');quickStart(['Q01','Q66'])});await p.click('[data-quick-choice="1"]');const state=await p.evaluate('JSON.stringify(quickState)');await p.click('#practiceBack');await p.click('[data-nav=communication]');await p.selectOption('#communicationLesson','clarify');await p.locator('#lessonPair summary').click();
+  for(const viewport of [{width:320,height:568},{width:844,height:390}]){await p.setViewportSize(viewport);await p.addStyleTag({content:'body,button{font-size:20px}'});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))}
+  await p.screenshot({path:path.join(outDir,'collaboration-landscape.png')});assert.match(await p.locator('#lessonPair [data-principle-pair]').textContent(),/先继续/);await p.locator('#lessonPair [data-principle-pair]').click();assert.equal(await p.evaluate('JSON.stringify(quickState)'),state);await p.click('#quickResume');assert.deepEqual(await p.evaluate('quickState.selected'),[1]);
+  await p.reload();await p.click('[data-nav=quick]');await p.click('#quickResume');assert.equal(await p.evaluate('JSON.stringify(quickState)'),state);await c.close();
+ });
  await test('installed shell opens offline and keeps unrelated caches',async()=>{
   const {c,p}=await fresh({serviceWorkers:'allow'});
   await p.evaluate(async()=>{await navigator.serviceWorker.ready;await caches.open('unrelated-fixture-cache')});
@@ -386,7 +399,7 @@ async function main(){
   assert.equal(server.listening,false);
   await p.reload({waitUntil:'commit'});
   await p.waitForFunction(()=>typeof APP_VERSION!=='undefined'&&!!document.querySelector('#daily')&&window.beforeOfflineReload===undefined);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.18.0');
+  assert.equal(await p.evaluate('APP_VERSION'),'0.19.0');
   assert.equal(await p.locator('#daily').count(),1);
   assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));
   await c.close();
