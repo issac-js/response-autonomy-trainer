@@ -165,7 +165,7 @@ async function main(){
   assert.equal(await p.locator('#quickFeedback ol li').count(),3);await p.evaluate(()=>{quickNext();quickNext()});assert.equal(await p.evaluate('quickState.step'),1);
   assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
- await test('all 84 quick questions give answers and explanations without scheduling a review',async()=>{
+ await test('all 90 quick questions give answers and explanations without scheduling a review',async()=>{
   const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#quickHome');
   const ids=await p.evaluate('QUICK_BANK.map(q=>q.id)');for(const id of ids){
    await p.evaluate(id=>quickStart([id]),id);const picks=await p.evaluate(id=>quickQuestion(id).correct,id);
@@ -299,7 +299,7 @@ async function main(){
  });
  await test('title footer and runtime version agree and update checking preserves local records',async()=>{
   const {c,p}=await fresh();assert.ok((await p.title()).includes(await p.evaluate('APP_VERSION')));assert.ok((await p.locator('.foot').textContent()).includes(await p.evaluate('APP_VERSION')));
-  await p.click('[data-nav=settings]');assert.match(await p.locator('#runtimeVersion').textContent(),/0\.17\.0/);const before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#checkAppUpdate');await p.waitForFunction('!document.getElementById("checkAppUpdate").disabled');assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+  await p.click('[data-nav=settings]');assert.match(await p.locator('#runtimeVersion').textContent(),/0\.18\.0/);const before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#checkAppUpdate');await p.waitForFunction('!document.getElementById("checkAppUpdate").disabled');assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
  await test('quick landing and summary keep navigation while explicit practice can pause and resume',async()=>{
   const {c,p}=await fresh();await p.click('[data-nav=quick]');
@@ -355,6 +355,26 @@ async function main(){
   for(const topic of ['review','support','environment']){await p.selectOption('#quickTopic',topic);await p.click('#quickStart');assert.equal(await p.evaluate('quickState.ids.length'),6);assert.deepEqual((await p.evaluate('quickState.ids.map(id=>quickQuestion(id).kind)')).sort(),['boolean','boolean','multi','multi','single','single']);await p.click('#practiceBack');await p.click('#quickClearRound')}
   assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
  });
+ await test('pace guide is optional, readable, escaped and introduces no timing or scoring fields',async()=>{
+  const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');await p.click('#paceHome');
+  assert.equal(await p.evaluate('page'),'communication');assert.equal(await p.locator('#paceGuide').getAttribute('open'),'');assert.ok(await p.locator('.nav').isVisible());assert.equal(await p.locator('#communicationOwn').isVisible(),false);
+  assert.equal(await p.locator('#paceGuide input, #paceGuide textarea, #paceGuide select').count(),0);assert.match(await p.locator('#paceGuide').innerText(),/没有固定停顿时长/);assert.match(await p.locator('#paceGuide').innerText(),/不等做完四步/);
+  for(const viewport of [{width:320,height:568},{width:844,height:390}]){await p.setViewportSize(viewport);await p.addStyleTag({content:'body,button{font-size:20px}'});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))}
+  await p.screenshot({path:path.join(outDir,'pace-guide-landscape.png')});await p.evaluate(()=>{PACE_GUIDES[0].memory='<img src=x onerror=window.bad=true>';renderCommunication()});assert.equal(await p.locator('#paceGuide img').count(),0);assert.equal(await p.evaluate('window.bad'),undefined);assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);await c.close();
+ });
+ await test('all three pace pairs submit before comparison and resume at the original course',async()=>{
+  const {c,p}=await fresh(),before=await p.evaluate('localStorage.getItem(STORE)');
+  for(const topic of ['observe','agency','review']){await p.evaluate(topic=>openPaceGuide(topic),topic);await p.locator('#paceGuide [data-principle-pair]').click();assert.equal(await p.evaluate('quickState.ids.length'),2);assert.equal(await p.locator('#principleComparison').count(),0);
+   for(let i=0;i<2;i++){const picks=await p.evaluate('quickQuestion(quickState.ids[quickState.step]).correct');for(const n of picks)await p.click(`[data-quick-choice="${n}"]`);await p.click('#quickSubmit');assert.equal(await p.locator('#principleComparison').count(),0);await p.click('#quickNext')}
+   assert.ok(await p.locator('#principleComparison').isVisible());assert.ok(await p.locator('.nav').isVisible());await p.locator('#principleComparison [data-principle-lesson]').click();assert.equal(await p.inputValue('#communicationLesson'),topic);await p.click('#communicationStart');await p.fill('#communicationOwn','我先说明已知期限和当前安排');await p.click('#communicationCommit');await p.fill('#communicationOwn','有新事实时调整必要行动');await p.click('#communicationCommit');assert.ok(await p.locator('.nav').isVisible());
+  }
+  assert.equal(await p.evaluate('localStorage.getItem(STORE)'),before);assert.equal(await p.evaluate('data.history.length'),0);await c.close();
+ });
+ await test('pace entry protects unfinished old questions and related course drafts',async()=>{
+  const {c,p}=await fresh();await p.evaluate(()=>{communicationProgress.observe={stage:1,answers:['旧原话','旧第二轮草稿'],variant:'urgent'};communicationSave();setPage('quick');quickStart(['Q01','Q66'])});await p.click('[data-quick-choice="1"]');
+  const state=await p.evaluate('JSON.stringify(quickState)'),draft=await p.evaluate('JSON.stringify(communicationProgress.observe)');await p.click('#practiceBack');await p.click('[data-nav=home]');await p.click('#paceHome');assert.equal(await p.evaluate('JSON.stringify(communicationProgress.observe)'),draft);
+  assert.match(await p.locator('#paceGuide [data-principle-pair]').textContent(),/先继续/);await p.locator('#paceGuide [data-principle-pair]').click();assert.equal(await p.evaluate('JSON.stringify(quickState)'),state);await p.click('#quickResume');assert.deepEqual(await p.evaluate('quickState.selected'),[1]);await p.reload();await p.click('[data-nav=quick]');await p.click('#quickResume');assert.equal(await p.evaluate('JSON.stringify(quickState)'),state);await c.close();
+ });
  await test('installed shell opens offline and keeps unrelated caches',async()=>{
   const {c,p}=await fresh({serviceWorkers:'allow'});
   await p.evaluate(async()=>{await navigator.serviceWorker.ready;await caches.open('unrelated-fixture-cache')});
@@ -366,7 +386,7 @@ async function main(){
   assert.equal(server.listening,false);
   await p.reload({waitUntil:'commit'});
   await p.waitForFunction(()=>typeof APP_VERSION!=='undefined'&&!!document.querySelector('#daily')&&window.beforeOfflineReload===undefined);
-  assert.equal(await p.evaluate('APP_VERSION'),'0.17.0');
+  assert.equal(await p.evaluate('APP_VERSION'),'0.18.0');
   assert.equal(await p.locator('#daily').count(),1);
   assert.ok(await p.evaluate("caches.has('unrelated-fixture-cache')"));
   await c.close();
