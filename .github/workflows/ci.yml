@@ -7,9 +7,12 @@ on:
 permissions:
   contents: read
 
+# 运行器固定 24.04：ubuntu-latest 已指向 26.04，而 playwright@1.58.2 没有
+# 该平台的 chromium/webkit 构建（ERROR: Playwright does not support ... on ubuntu26.04-x64）。
+# 升级 Playwright 并验证通过前，不要改回 ubuntu-latest。
 jobs:
   core:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,7 +37,7 @@ jobs:
           git diff --exit-code -- index.html
 
   browsers:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
