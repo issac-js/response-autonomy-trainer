@@ -38,7 +38,9 @@ jobs:
 
   browsers:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    # WebKit 在 24.04 上整套 readiness 约需 18-20 分钟（17 日旧镜像 4 分钟，
+    # 24.04 的 webkit 构建明显更慢）。上限放到 30 分钟，实际耗时以日志为准。
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
